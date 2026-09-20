@@ -253,6 +253,7 @@ input[type=text]{font:inherit;font-size:16px;width:100%;min-height:40px;border-r
   <div class="ov" id="ovSettings"><div class="panel">
     <h2>Settings</h2>
     <label class="tog"><span>Tap a card twice to play it<br><span class="muted" style="font-size:12px">First tap lifts the card, second tap plays it. Handy on a phone; off by default on a PC.</span></span><input type="checkbox" id="optConfirm"></label>
+    <label class="tog"><span>Larger cards<br><span class="muted" style="font-size:12px">Bigger hands and a smaller middle. Try this if the cards are hard to read.</span></span><input type="checkbox" id="optBig"></label>
     <div class="acts"><button class="btn" id="btnReset">Reset my scores</button><button class="btn primary" data-close="ovSettings">Close</button></div>
   </div></div>
 
@@ -296,7 +297,8 @@ var G=null, phase='ready', mode='challenge', token=0, pending=null, selected=nul
 var attempt=0, elapsed=0, last=0, running=false, resultData=null, incoming=null;
 var touch=false; try{touch=window.matchMedia('(pointer:coarse)').matches;}catch(e){}
 var confirmTap = load('confirm',touch?'1':'0')==='1';
-var bigH=110, smallH=64, th=60, tw=42;
+var bigH=110, smallH=64, th=60, tw=42, PAD=24;
+var bigCards = load('big',touch?'1':'0')==='1';
 
 var $=function(id){return document.getElementById(id);};
 var el={felt:$('felt'),north:$('north'),south:$('south'),trick:$('trick'),center:$('center'),
@@ -472,9 +474,11 @@ function layout(){
   try{compact=window.matchMedia('(max-width:900px),(max-height:520px)').matches;}catch(e){}
   var r=document.documentElement.style;
   r.setProperty('--af',(compact?11:15)+'px');
-  bigH=clamp(Math.floor(H*.3)-14,80,172);
-  smallH=Math.floor(bigH*.62);
-  var th0=clamp(Math.floor((H-(bigH+smallH+40))/2)-4,40,120);
+  var mMin=clamp(Math.round(H*(bigCards?.30:.36)),110,330);
+  var rows=H-mMin-2*PAD;
+  bigH=clamp(Math.floor(rows*.54),70,172);
+  smallH=clamp(Math.min(rows-bigH,Math.round(bigH*.85)),56,bigH);
+  var th0=clamp(Math.floor((H-(bigH+smallH+2*PAD))/2)-4,40,120);
   th=th0;
   for(var k=0;k<3;k++){
     var bw=clamp(Math.round(th*1.25),44,128);
@@ -550,7 +554,7 @@ function statusText(){
 function render(){
   if(!G) return;
   if(phase==='play'&&(G.turn==='N'||G.turn==='S')) activeHand=G.turn;
-  var nh=(activeHand==='N'?bigH:smallH)+20, sh=(activeHand==='S'?bigH:smallH)+20;
+  var nh=(activeHand==='N'?bigH:smallH)+PAD, sh=(activeHand==='S'?bigH:smallH)+PAD;
   el.felt.style.setProperty('--nh',nh+'px'); el.felt.style.setProperty('--sh',sh+'px');
   var midH=el.felt.clientHeight-nh-sh;
   renderHand('N'); renderHand('S'); renderSeat('W',midH); renderSeat('E',midH); renderTrick();
@@ -640,10 +644,11 @@ $('mid').addEventListener('click',function(){ if(pending) pending.fn(); });
 $('startChallenge').onclick=function(){start('challenge');};
 $('mUndo').onclick=function(){el.menu.classList.remove('open');undo();};
 $('mInvite').onclick=showInvite;
-$('mSettings').onclick=function(){ $('optConfirm').checked=confirmTap; el.menu.classList.remove('open'); $('ovSettings').classList.add('show'); };
+$('mSettings').onclick=function(){ $('optConfirm').checked=confirmTap; $('optBig').checked=bigCards; el.menu.classList.remove('open'); $('ovSettings').classList.add('show'); };
 $('mRestart').onclick=toReady;
 $('menuBtn').onclick=function(){ var o=el.menu.classList.toggle('open'); this.setAttribute('aria-expanded',o?'true':'false'); };
 $('btnReset').onclick=function(){ ['bestPts','bestTime','attempts'].forEach(function(k){try{localStorage.removeItem('dcp:'+k);}catch(e){}}); this.textContent='Scores reset'; };
+$('optBig').onchange=function(){ bigCards=this.checked; save('big',bigCards?'1':'0'); layout(); render(); };
 $('optConfirm').onchange=function(){ confirmTap=this.checked; save('confirm',confirmTap?'1':'0'); selected=null; render(); };
 Array.prototype.forEach.call(document.querySelectorAll('[data-close]'),function(b){
   b.onclick=function(){ $(b.getAttribute('data-close')).classList.remove('show'); };
