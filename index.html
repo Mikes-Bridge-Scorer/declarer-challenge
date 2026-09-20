@@ -116,7 +116,7 @@ body{background:var(--bg);color:var(--panel-ink);font-family:-apple-system,"Sego
   #status{font-size:12px;margin-top:6px}
   #menuBtn{display:flex;margin-top:auto;min-height:36px}
   #menu{display:none;margin-top:0}
-  #menu.open{display:flex;position:absolute;right:calc(100% + 6px);bottom:8px;width:210px;background:#0f3a2b;padding:10px;border-radius:12px;border:1px solid rgba(214,173,85,.6);z-index:30;box-shadow:0 10px 30px rgba(0,0,0,.5)}
+  #menu.open{display:flex;position:fixed;right:calc(var(--sidew) + 8px + env(safe-area-inset-right,0px));bottom:calc(8px + env(safe-area-inset-bottom,0px));width:210px;background:#0f3a2b;padding:10px;border-radius:12px;border:1px solid rgba(214,173,85,.6);z-index:30;box-shadow:0 10px 30px rgba(0,0,0,.5)}
 }
 
 /* ---- buttons / overlays ---- */
@@ -646,6 +646,7 @@ $('mUndo').onclick=function(){el.menu.classList.remove('open');undo();};
 $('mInvite').onclick=showInvite;
 $('mSettings').onclick=function(){ $('optConfirm').checked=confirmTap; $('optBig').checked=bigCards; el.menu.classList.remove('open'); $('ovSettings').classList.add('show'); };
 $('mRestart').onclick=toReady;
+document.addEventListener('click',function(e){ if(el.menu.classList.contains('open')&&!e.target.closest('#menu')&&!e.target.closest('#menuBtn')){ el.menu.classList.remove('open'); $('menuBtn').setAttribute('aria-expanded','false'); } });
 $('menuBtn').onclick=function(){ var o=el.menu.classList.toggle('open'); this.setAttribute('aria-expanded',o?'true':'false'); };
 $('btnReset').onclick=function(){ ['bestPts','bestTime','attempts'].forEach(function(k){try{localStorage.removeItem('dcp:'+k);}catch(e){}}); this.textContent='Scores reset'; };
 $('optBig').onchange=function(){ bigCards=this.checked; save('big',bigCards?'1':'0'); layout(); render(); };
