@@ -75,7 +75,7 @@ body{background:var(--bg);color:var(--panel-ink);font-family:-apple-system,"Sego
 .auc td{padding:.2em .1em;text-align:center;white-space:nowrap;overflow:hidden}
 .auc .r{color:var(--red)}
 .aucsum{margin-top:4px;text-align:center;font-size:calc(var(--af,13px)*.72);color:var(--muted);font-family:-apple-system,"Segoe UI",Roboto,sans-serif}
-#trick{position:relative;width:calc(var(--tw)*3.3);height:calc(var(--th)*2);flex:0 0 auto}
+#trick{position:relative;width:calc(var(--tw)*3.3);height:calc(var(--th)*1.5);flex:0 0 auto}
 .slot{position:absolute}
 .slot.n{top:0;left:50%;transform:translateX(-50%)}
 .slot.s{bottom:0;left:50%;transform:translateX(-50%)}
@@ -91,7 +91,9 @@ body{background:var(--bg);color:var(--panel-ink);font-family:-apple-system,"Sego
 
 /* ---- side panel ---- */
 #side{flex:0 0 var(--sidew);display:flex;flex-direction:column;gap:12px;padding:14px;background:rgba(0,0,0,.3);border-left:1px solid rgba(214,173,85,.45);color:#f3efe2;position:relative;overflow:auto;min-height:0}
-.stitle{font-family:Georgia,"Times New Roman",serif;font-weight:700;font-size:18px;line-height:1.2;color:var(--brass)}
+.stitle{font-family:Georgia,"Times New Roman",serif;font-weight:700;font-size:18px;line-height:1.2;color:var(--brass);padding-right:40px}
+#quitBtn{position:absolute;top:10px;right:10px;z-index:5;width:34px;height:34px;padding:0;border-radius:9px;border:1px solid rgba(255,255,255,.3);background:rgba(255,255,255,.07);color:#f3efe2;cursor:pointer;display:grid;place-items:center}
+#quitBtn svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round}
 .contract{display:inline-block;font-family:Georgia,"Times New Roman",serif;font-weight:700;font-size:17px;background:var(--ivory);color:var(--ink);border-radius:6px;padding:2px 10px;white-space:nowrap;line-height:1.35}
 .contract .r{color:var(--red)}
 .hud .r2{display:flex;justify-content:space-between;gap:8px;font-size:14px;padding:4px 0;border-bottom:1px solid rgba(255,255,255,.1)}
@@ -114,7 +116,8 @@ body{background:var(--bg);color:var(--panel-ink);font-family:-apple-system,"Sego
   .contract{font-size:15px;padding:1px 8px}
   .hud .r2{font-size:12px;padding:2px 0}
   #status{font-size:12px;margin-top:6px}
-  #menuBtn{display:flex;margin-top:auto;min-height:36px}
+  #menuBtn{display:flex;margin-top:auto;min-height:36px;width:calc(100% - 44px)}
+  #quitBtn{top:auto;bottom:8px;right:10px}
   #menu{display:none;margin-top:0}
   #menu.open{display:flex;position:fixed;right:calc(var(--sidew) + 8px + env(safe-area-inset-right,0px));bottom:calc(8px + env(safe-area-inset-bottom,0px));width:210px;background:#0f3a2b;padding:10px;border-radius:12px;border:1px solid rgba(214,173,85,.6);z-index:30;box-shadow:0 10px 30px rgba(0,0,0,.5)}
 }
@@ -230,6 +233,7 @@ input[type=text]{font:inherit;font-size:16px;width:100%;min-height:40px;border-r
   </main>
 
   <aside id="side">
+    <button id="quitBtn" aria-label="Quit"><svg viewBox="0 0 24 24"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg></button>
     <div class="stitle">Declarer Challenge</div>
     <div id="auction" aria-label="Auction"></div>
     <div class="hud">
@@ -263,6 +267,12 @@ input[type=text]{font:inherit;font-size:16px;width:100%;min-height:40px;border-r
     <label class="f" for="invName">Your name (shown in the email)</label>
     <input type="text" id="invName" maxlength="24" autocomplete="off">
     <div class="acts"><a class="btn primary" id="invMail" href="#">Open email</a><button class="btn" id="invCopy">Copy message</button><button class="btn" data-close="ovInvite">Close</button></div>
+  </div></div>
+
+  <div class="ov" id="ovQuit"><div class="panel">
+    <h2>Leave this hand?</h2>
+    <p id="quitText"></p>
+    <div class="acts"><button class="btn primary" data-close="ovQuit">Keep playing</button><button class="btn" id="quitRestart">Back to the start</button><button class="btn" id="quitExit">Exit to Bridge at Sea</button></div>
   </div></div>
 
   <div class="ov" id="ovResult"><div class="panel" id="resultPanel"></div></div>
@@ -478,12 +488,8 @@ function layout(){
   var rows=H-mMin-2*PAD;
   bigH=clamp(Math.floor(rows*.54),70,172);
   smallH=clamp(Math.min(rows-bigH,Math.round(bigH*.85)),56,bigH);
-  var th0=clamp(Math.floor((H-(bigH+smallH+2*PAD))/2)-4,40,120);
-  th=th0;
-  for(var k=0;k<3;k++){
-    var bw=clamp(Math.round(th*1.25),44,128);
-    th=clamp(Math.min(th0,Math.floor((W-24-2*bw-30)/3.3/.7)),36,120);
-  }
+  var midH=H-(bigH+smallH+2*PAD),bs=backSize(midH);
+  th=clamp(Math.min(bigH,Math.floor(midH/1.5)-2,Math.floor((W-24-2*bs.bw-30)/3.3/.7)),36,172);
   tw=Math.round(th*.7);
   r.setProperty('--th',th+'px'); r.setProperty('--tw',tw+'px');
 }
@@ -518,22 +524,24 @@ function renderHand(seat){
   host.innerHTML=html+'</div>';
   host.classList.toggle('blur',phase==='ready');
 }
+function backSize(midH){var bh=clamp(midH-70,30,88);return {bw:Math.round(bh/.68),bh:bh};}
 function renderSeat(seat,midH){
   var host=seat==='W'?el.seatW:el.seatE,n=G.hands[seat].length;
-  var bw=clamp(Math.round(th*1.25),44,128),bh=Math.round(bw*.68);
-  var off=clamp(Math.floor((midH-30-bh)/12),4,30);
+  var bs=backSize(midH),bw=bs.bw,bh=bs.bh;
+  var off=clamp(Math.floor((midH-30-bh)/12),3,30);
   var strips='';
   for(var i=0;i<n;i++) strips+='<div class="cb" style="'+(i?'margin-top:'+(off-bh)+'px':'')+'"></div>';
   host.className='seat'+(G.turn===seat?' turn':'');
   host.innerHTML='<div class="who">'+NAMES[seat]+'</div><div class="stack" style="--bw:'+bw+'px;--bh:'+bh+'px" aria-label="'+NAMES[seat]+' holds '+n+' cards">'+strips+'</div>';
 }
 function renderTrick(){
-  var slots={N:'',E:'',S:'',W:''};
+  var slots={N:'',E:'',S:'',W:''},z={};
   G.trick.forEach(function(p,i){
+    z[p.seat]=i+1;
     var cls=(i===G.trick.length-1&&!pending?'new':'')+(G.lastWinner===p.seat?' win':'');
     slots[p.seat]=cardHtml(p.card,tw,th,cls.trim(),0,null,false);
   });
-  el.trick.innerHTML=['n','w','e','s'].map(function(k){return '<div class="slot '+k+'">'+slots[k.toUpperCase()]+'</div>';}).join('');
+  el.trick.innerHTML=['n','w','e','s'].map(function(k){return '<div class="slot '+k+'" style="z-index:'+(z[k.toUpperCase()]||0)+'">'+slots[k.toUpperCase()]+'</div>';}).join('');
 }
 function renderAuction(){
   var cells=['','',''].concat(HAND.auction),rows='';
@@ -566,7 +574,7 @@ function render(){
 }
 
 /* ---------- overlays / messages ---------- */
-function closeAll(){['ovSettings','ovInvite','ovResult'].forEach(function(i){$(i).classList.remove('show');});el.menu.classList.remove('open');$('menuBtn').setAttribute('aria-expanded','false');}
+function closeAll(){['ovSettings','ovInvite','ovResult','ovQuit'].forEach(function(i){$(i).classList.remove('show');});el.menu.classList.remove('open');$('menuBtn').setAttribute('aria-expanded','false');}
 function baseUrl(){return location.href.split('#')[0].split('?')[0];}
 function resultWord(tricks){return tricks>=HAND.need?(HAND.level+'\u2660 made'):(HAND.level+'\u2660 down '+(HAND.need-tricks));}
 function buildMessage(name,pts,tricks,secs){
@@ -646,6 +654,13 @@ $('mUndo').onclick=function(){el.menu.classList.remove('open');undo();};
 $('mInvite').onclick=showInvite;
 $('mSettings').onclick=function(){ $('optConfirm').checked=confirmTap; $('optBig').checked=bigCards; el.menu.classList.remove('open'); $('ovSettings').classList.add('show'); };
 $('mRestart').onclick=toReady;
+$('quitBtn').onclick=function(){
+  var t='Go back to the start, or leave the app.';
+  if(phase==='play') t=(mode==='challenge'&&G.counted)?'You have already played a card, so leaving now uses up this attempt.':'Your progress on this hand will be lost.';
+  $('quitText').textContent=t; el.menu.classList.remove('open'); $('ovQuit').classList.add('show');
+};
+$('quitRestart').onclick=toReady;
+$('quitExit').onclick=function(){ try{window.close();}catch(e){} setTimeout(function(){ location.href='https://bridgescorer.com/'; },300); };
 document.addEventListener('click',function(e){ if(el.menu.classList.contains('open')&&!e.target.closest('#menu')&&!e.target.closest('#menuBtn')){ el.menu.classList.remove('open'); $('menuBtn').setAttribute('aria-expanded','false'); } });
 $('menuBtn').onclick=function(){ var o=el.menu.classList.toggle('open'); this.setAttribute('aria-expanded',o?'true':'false'); };
 $('btnReset').onclick=function(){ ['bestPts','bestTime','attempts'].forEach(function(k){try{localStorage.removeItem('dcp:'+k);}catch(e){}}); this.textContent='Scores reset'; };
