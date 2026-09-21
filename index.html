@@ -122,7 +122,8 @@ body{background:var(--bg);color:var(--panel-ink);font-family:-apple-system,"Sego
   #menuBtn{display:flex;margin-top:auto;min-height:36px;width:calc(100% - 44px)}
   #quitBtn{top:auto;bottom:8px;right:10px}
   #menu{display:none;margin-top:0}
-  #menu.open{display:flex;position:fixed;right:calc(var(--sidew) + 8px + env(safe-area-inset-right,0px));bottom:calc(8px + env(safe-area-inset-bottom,0px));width:210px;background:#0f3a2b;padding:10px;border-radius:12px;border:1px solid rgba(214,173,85,.6);z-index:30;box-shadow:0 10px 30px rgba(0,0,0,.5)}
+  .mbtn{min-height:36px}
+  #menu.open{max-height:calc(100% - 16px);overflow:auto;display:flex;position:fixed;right:calc(var(--sidew) + 8px + env(safe-area-inset-right,0px));bottom:calc(8px + env(safe-area-inset-bottom,0px));width:210px;background:#0f3a2b;padding:10px;border-radius:12px;border:1px solid rgba(214,173,85,.6);z-index:30;box-shadow:0 10px 30px rgba(0,0,0,.5)}
 }
 
 /* ---- buttons / overlays ---- */
@@ -137,6 +138,8 @@ body{background:var(--bg);color:var(--panel-ink);font-family:-apple-system,"Sego
 .panel p{margin:4px 0;font-size:14px;line-height:1.4}
 .muted{color:var(--muted)}
 .panel .r{color:var(--red)}
+.how{margin:6px 0 0;padding-left:20px;font-size:14px;line-height:1.45}
+.how li{margin:0 0 7px}
 .tbl{width:100%;border-collapse:collapse;font-size:14px;margin-top:6px}
 .tbl td,.tbl th{padding:6px 6px;border-bottom:1px solid var(--line);text-align:left;vertical-align:middle}
 .tbl th{font-size:12px;color:var(--muted);font-weight:600}
@@ -257,6 +260,7 @@ input[type=text]{font:inherit;font-size:16px;width:100%;min-height:40px;border-r
     <nav id="menu" aria-label="Menu">
       <button class="mbtn" id="mUndo">Undo <small>practice</small></button>
       <button class="mbtn" id="mHands">My hands</button>
+      <button class="mbtn" id="mHelp">How to play</button>
       <button class="mbtn" id="mInvite">Invite a friend</button>
       <button class="mbtn" id="mSettings">Settings</button>
       <button class="mbtn" id="mRestart">Restart hand</button>
@@ -284,6 +288,13 @@ input[type=text]{font:inherit;font-size:16px;width:100%;min-height:40px;border-r
     <h2>Leave this hand?</h2>
     <p id="quitText"></p>
     <div class="acts"><button class="btn primary" data-close="ovQuit">Keep playing</button><button class="btn" id="quitRestart">Back to the start</button><button class="btn" id="quitExit">Exit to Bridge at Sea</button></div>
+  </div></div>
+
+  <div class="ov" id="ovIntro"><div class="panel">
+    <h2>How it works</h2>
+    <div id="introBody"></div>
+    <p class="muted" style="margin-top:6px">Then press <b>Start</b> when you are ready. The clock starts when you do.</p>
+    <div class="acts"><button class="btn primary" id="introGo">Got it</button></div>
   </div></div>
 
   <div class="ov" id="ovSet"><div class="panel" id="setPanel"></div></div>
@@ -321,7 +332,7 @@ var NAMES={N:'North',E:'East',S:'South',W:'West'};
 var RNAME={11:'J',12:'Q',13:'K',14:'A'};
 
 /* Game rules */
-var BUILD='2026-09-21 d';       // shown in Settings so you can tell which version a phone is running
+var BUILD='2026-09-21 g';       // shown in Settings so you can tell which version a phone is running
 var GATE_URL='';               // later: the bridgescorer.com sign-up gate page. Challenge links then point there instead of straight at the app.
 var MAX_ATT=3;                 // attempts allowed per hand
 var SET_IDS=[100,101,102];     // the three-hand challenge that is sent to friends
@@ -538,12 +549,11 @@ function startDemo(id){
 function showDemoEnd(){
   var t=G.won.ns;
   $('resultPanel').innerHTML='<h2>'+esc(contractText())+' made: how it is done</h2><p>Declarer takes '+t+' tricks; the contract needed '+HAND.need+'.</p>'+
-    '<div class="acts"><button class="btn primary" id="demoAgain">Watch again</button><button class="btn" id="demoPractise">Practise this hand</button><button class="btn" id="demoBack">Back to the challenge</button></div>';
+    '<div class="acts"><button class="btn primary" id="demoBack">'+(setComplete()&&load('setSeen','')!=='1'?'See your challenge score':'Next hand')+'</button><button class="btn" id="demoAgain">Watch again</button></div>';
   $('ovResult').classList.add('show');
   var id=HAND.id;
   $('demoAgain').onclick=function(){ startDemo(id); };
-  $('demoPractise').onclick=function(){ start('practice'); };
-  $('demoBack').onclick=toReady;
+  $('demoBack').onclick=function(){ if(setComplete()&&load('setSeen','')!=='1'){ save('setSeen','1'); closeAll(); showSet(); } else toReady(); };
 }
 
 /* ---------- flow ---------- */
@@ -702,7 +712,7 @@ function render(){
 }
 
 /* ---------- overlays / messages ---------- */
-function closeAll(){['ovSettings','ovInvite','ovResult','ovQuit','ovSet','ovHands','ovPay'].forEach(function(i){$(i).classList.remove('show');});el.menu.classList.remove('open');$('menuBtn').setAttribute('aria-expanded','false');}
+function closeAll(){['ovSettings','ovInvite','ovResult','ovQuit','ovSet','ovHands','ovPay','ovIntro'].forEach(function(i){$(i).classList.remove('show');});el.menu.classList.remove('open');$('menuBtn').setAttribute('aria-expanded','false');}
 function baseUrl(){return location.href.split('#')[0].split('?')[0];}
 function linkBase(){return GATE_URL||baseUrl();}
 function setRange(){return SET_IDS[0]+' to '+SET_IDS[SET_IDS.length-1];}
@@ -761,16 +771,15 @@ function showResult(){
     if(r.done) left+='<p>Hand complete. Your score for this hand is <b>'+b.p+' points</b> in '+fmtSec(b.t)+'.</p>';
     else left+='<p>You have '+remain+' attempt'+(remain===1?'':'s')+' left. Making it next time scores '+(r.att+1===2?6:3)+' points.</p>';
     var label=!r.done?'Try again':(setComplete()&&load('setSeen','')!=='1'?'See your challenge score':'Next hand');
-    right+='<div class="acts"><button class="btn primary" id="againBtn">'+label+'</button><button class="btn" id="practiceBtn">Practise this hand</button>'+((r.done&&HAND.sol)?'<button class="btn" id="solBtn">Show me how it is done</button>':'')+'</div>'+
-      '<p class="muted" style="font-size:12px">Practising is not scored, and you can use undo.</p>';
+    right+='<div class="acts"><button class="btn primary" id="againBtn">'+label+'</button>'+((r.done&&HAND.sol)?'<button class="btn" id="solBtn">Show me how it is done</button>':'')+'</div>';
   } else {
     left+='<p class="muted">Practice is not scored.</p>';
-    right+='<div class="acts"><button class="btn primary" id="againBtn">Back to the challenge</button><button class="btn" id="practiceBtn">Practise again</button></div>';
+    right+='<div class="acts"><button class="btn primary" id="againBtn">Back to the challenge</button><button class="btn" id="practiceBtn">Practise again</button>'+((isDone(id)&&HAND.sol)?'<button class="btn" id="solBtn">Show me how it is done</button>':'')+'</div>';
   }
   $('resultPanel').innerHTML='<div class="res"><div>'+left+'</div><div>'+right+'</div></div>';
   $('ovResult').classList.add('show');
   $('againBtn').onclick=afterHand;
-  $('practiceBtn').onclick=function(){start('practice');};
+  if($('practiceBtn')) $('practiceBtn').onclick=function(){start('practice');};
   if($('solBtn')) $('solBtn').onclick=function(){ startDemo(id); };
 }
 function showSet(){
@@ -811,6 +820,19 @@ function showHands(note){
   el.menu.classList.remove('open');
   $('ovHands').classList.add('show');
 }
+function showIntro(){
+  var play=confirmTap?'<b>Tap a card once to lift it, then tap it again to play it.</b> If you lift the wrong card, just tap a different one: nothing is played until the second tap on the same card.':'<b>Click a card to play it.</b> Only the cards you are allowed to play can be chosen.';
+  $('introBody').innerHTML='<ol class="how">'+
+    '<li><b>You are South, the declarer.</b> Make the contract shown. Dummy (North) is across the table, and you play its cards too when it is dummy&rsquo;s turn.</li>'+
+    '<li><b>Study the auction</b> in the top right. It tells you where the missing high cards are likely to be.</li>'+
+    '<li>'+play+'</li>'+
+    '<li><b>There is no undo in the challenge,</b> so think before you play.</li>'+
+    '<li><b>Three attempts per hand.</b> Made first time scores 10, second time 6, third time 3. If you fail, down 1 scores 5, down 2 scores 3 and down 3 scores 1. The clock only breaks ties.</li>'+
+    '<li><b>Hands '+setRange()+' are your challenge.</b> When you finish them you can send your score to a friend to beat.</li>'+
+    '<li>When a hand is finished, <b>Show me how it is done</b> replays the winning line.</li></ol>';
+  el.menu.classList.remove('open');
+  $('ovIntro').classList.add('show');
+}
 function showPay(){
   $('payMsg').textContent=''; $('payCode').value='';
   el.menu.classList.remove('open');
@@ -831,6 +853,8 @@ $('mInvite').onclick=showInvite;
 $('mSettings').onclick=function(){ $('optConfirm').checked=confirmTap; $('optBig').checked=bigCards; el.menu.classList.remove('open'); $('ovSettings').classList.add('show'); };
 $('mRestart').onclick=leaveHand;
 $('mHands').onclick=function(){ showHands(); };
+$('mHelp').onclick=showIntro;
+$('introGo').onclick=function(){ save('intro','1'); $('ovIntro').classList.remove('show'); };
 $('quitBtn').onclick=function(){
   var t='Go back to the start, or leave the app.';
   if(phase==='play'&&mode==='demo') t='Stop the demonstration and go back.';
@@ -899,6 +923,7 @@ window.addEventListener('orientationchange',function(){ setTimeout(function(){ l
   newGame(); layout(); render();
   if(id===null) showHands('You have played every hand available for now. New hands will be added.');
   else if(!canPlay(id)) showPay();
+  else if(load('intro','')!=='1') showIntro();
   requestAnimationFrame(function(){ layout(); render(); });
 })();
 })();
