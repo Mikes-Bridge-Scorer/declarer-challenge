@@ -111,6 +111,7 @@ body{background:var(--bg);color:var(--panel-ink);font-family:-apple-system,"Sego
   :root{--sidew:160px}
   #auction{padding:5px 4px}
   .aucsum{display:none}
+  .readybox .cap{display:none}
   #side{padding:8px 10px;gap:6px}
   .stitle{display:none}
   .contract{font-size:15px;padding:1px 8px}
@@ -133,6 +134,11 @@ body{background:var(--bg);color:var(--panel-ink);font-family:-apple-system,"Sego
 .panel h2{margin:0 0 6px;font-family:Georgia,serif;font-size:22px;line-height:1.15}
 .panel p{margin:4px 0;font-size:14px;line-height:1.4}
 .muted{color:var(--muted)}
+.panel .r{color:var(--red)}
+.tbl{width:100%;border-collapse:collapse;font-size:14px;margin-top:6px}
+.tbl td,.tbl th{padding:6px 6px;border-bottom:1px solid var(--line);text-align:left;vertical-align:middle}
+.tbl th{font-size:12px;color:var(--muted);font-weight:600}
+.tbl .btn{min-height:32px;padding:0 12px;font-size:13px}
 .acts{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
 .res{display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start}
 .res.one{grid-template-columns:1fr}
@@ -247,6 +253,7 @@ input[type=text]{font:inherit;font-size:16px;width:100%;min-height:40px;border-r
     <button class="mbtn" id="menuBtn" aria-expanded="false">Menu</button>
     <nav id="menu" aria-label="Menu">
       <button class="mbtn" id="mUndo">Undo <small>practice</small></button>
+      <button class="mbtn" id="mHands">My hands</button>
       <button class="mbtn" id="mInvite">Invite a friend</button>
       <button class="mbtn" id="mSettings">Settings</button>
       <button class="mbtn" id="mRestart">Restart hand</button>
@@ -258,7 +265,7 @@ input[type=text]{font:inherit;font-size:16px;width:100%;min-height:40px;border-r
     <h2>Settings</h2>
     <label class="tog"><span>Tap a card twice to play it<br><span class="muted" style="font-size:12px">First tap lifts the card, second tap plays it. Handy on a phone; off by default on a PC.</span></span><input type="checkbox" id="optConfirm"></label>
     <label class="tog"><span>Larger cards<br><span class="muted" style="font-size:12px">Bigger hands and a smaller middle. Try this if the cards are hard to read.</span></span><input type="checkbox" id="optBig"></label>
-    <div class="acts"><button class="btn" id="btnReset">Reset my scores</button><button class="btn primary" data-close="ovSettings">Close</button></div>
+    <div class="acts"><button class="btn" id="btnReset">Reset my scores</button><button class="btn" id="btnResetLic">Remove unlock code</button><button class="btn primary" data-close="ovSettings">Close</button></div>
   </div></div>
 
   <div class="ov" id="ovInvite"><div class="panel">
@@ -275,6 +282,23 @@ input[type=text]{font:inherit;font-size:16px;width:100%;min-height:40px;border-r
     <div class="acts"><button class="btn primary" data-close="ovQuit">Keep playing</button><button class="btn" id="quitRestart">Back to the start</button><button class="btn" id="quitExit">Exit to Bridge at Sea</button></div>
   </div></div>
 
+  <div class="ov" id="ovSet"><div class="panel" id="setPanel"></div></div>
+
+  <div class="ov" id="ovHands"><div class="panel">
+    <h2>My hands</h2>
+    <div id="handsBody"></div>
+  </div></div>
+
+  <div class="ov" id="ovPay"><div class="panel">
+    <h2>Unlock more hands</h2>
+    <p>You have played the free hands. To carry on, choose Annual (&pound;10 a year) or Lifetime (&pound;25) on Ko-fi. After you pay you receive a 6-digit code. Enter it below and it is remembered on this device.</p>
+    <div class="acts"><a class="btn primary" id="payAnnual" target="_blank" rel="noopener">Annual &pound;10</a><a class="btn" id="payLife" target="_blank" rel="noopener">Lifetime &pound;25</a></div>
+    <label class="f" for="payCode">Your 6-digit code</label>
+    <input type="text" id="payCode" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="off">
+    <div class="acts"><button class="btn primary" id="payGo">Unlock</button><button class="btn" data-close="ovPay">Not now</button></div>
+    <p id="payMsg" style="font-weight:600;min-height:1.4em"></p>
+  </div></div>
+
   <div class="ov" id="ovResult"><div class="panel" id="resultPanel"></div></div>
 </div>
 
@@ -285,18 +309,31 @@ input[type=text]{font:inherit;font-size:16px;width:100%;min-height:40px;border-r
 'use strict';
 
 /* ---------- data ---------- */
-var SYM={S:'\u2660\uFE0E',H:'\u2665\uFE0E',D:'\u2666\uFE0E',C:'\u2663\uFE0E'};
+var SYM={S:'\u2660\uFE0E',H:'\u2665\uFE0E',D:'\u2666\uFE0E',C:'\u2663\uFE0E',N:'NT'};
 var SUITNAME={S:'spades',H:'hearts',D:'diamonds',C:'clubs'};
 var SUITORD=['S','H','D','C'];
 var SEATS=['W','N','E','S'];               // clockwise play order
 var NAMES={N:'North',E:'East',S:'South',W:'West'};
 var RNAME={11:'J',12:'Q',13:'K',14:'A'};
 
-/* PLACEHOLDER hand for the test build. Not verified, not for the final pack. */
-var HAND={id:1,dealer:'S',vul:'None',
-  deal:{N:'KQ52.A73.K84.963',E:'83.Q64.9752.8742',S:'AJT96.K52.A63.A5',W:'74.JT98.QJT.KQJT'},
-  trump:'S',level:4,need:10,lead:'CK',
-  auction:['1S','Pass','3S','Pass','4S','Pass','Pass','Pass']};
+/* Game rules */
+var MAX_ATT=3;                 // attempts allowed per hand
+var SET_IDS=[100,101,102];     // the three-hand challenge that is sent to friends
+var FREE_MAX=105;              // hands up to here are free (103-105 are the free extras)
+var LAST_ID=107;               // last hand in this build
+
+/* Licence: same numeric 6-digit pattern as the other Bridge at Sea apps (5xxxxx = this app).
+   TODO before release: create the two Ko-fi shop items and paste their links below. */
+var LICENSE={
+  annualUrl:'https://ko-fi.com/mike23528549',
+  lifeUrl:'https://ko-fi.com/mike23528549',
+  codes:{'501025':'annual','502510':'lifetime'},
+  demo:{'000000':'lifetime'}     // TEST ONLY: delete this line before the app is made public
+};
+
+/* PLACEHOLDER hands (test:true). Random deals from a fixed seed, NOT verified, NOT the real hands. */
+var HANDS={"100":{"id":100,"dealer":"S","vul":"None","test":true,"deal":{"N":"KT98.K64.Q5.A862","E":"6.T95.KJ743.KT54","S":"AQ732.J.A96.QJ73","W":"J54.AQ8732.T82.9"},"trump":"S","level":4,"need":10,"lead":"H7","auction":["1S","Pass","4S","Pass","Pass","Pass"]},"101":{"id":101,"dealer":"S","vul":"None","test":true,"deal":{"N":"K82.Q74.QJT7.JT3","E":"AQT974.3.952.AQ2","S":"3.AKJT8.A4.K9654","W":"J65.9652.K863.87"},"trump":"H","level":4,"need":10,"lead":"D3","auction":["1H","Pass","3H","Pass","4H","Pass","Pass","Pass"]},"102":{"id":102,"dealer":"S","vul":"None","test":true,"deal":{"N":"953.762.AQ97.KT5","E":"T.T9853.KT5.9874","S":"AJ74.KQ4.J864.AJ","W":"KQ862.AJ.32.Q632"},"trump":"N","level":3,"need":9,"lead":"SK","auction":["1N","Pass","3N","Pass","Pass","Pass"]},"103":{"id":103,"dealer":"S","vul":"None","test":true,"deal":{"N":"854.A53.A64.A954","E":"J.KJT96.K85.Q863","S":"AKQ632.Q872.QT3.","W":"T97.4.J972.KJT72"},"trump":"S","level":4,"need":10,"lead":"C7","auction":["1S","Pass","3S","Pass","4S","Pass","Pass","Pass"]},"104":{"id":104,"dealer":"S","vul":"None","test":true,"deal":{"N":"Q63.K54.J98.AT65","E":"K852.7.6542.Q742","S":"AJ4.AJT93.QT73.K","W":"T97.Q862.AK.J983"},"trump":"H","level":4,"need":10,"lead":"ST","auction":["1H","Pass","3H","Pass","4H","Pass","Pass","Pass"]},"105":{"id":105,"dealer":"S","vul":"None","test":true,"deal":{"N":"Q52.A85.Q83.KJ86","E":"86.K642.AK742.92","S":"AKJT7..J965.AT43","W":"943.QJT973.T.Q75"},"trump":"S","level":4,"need":10,"lead":"HQ","auction":["1S","Pass","3S","Pass","4S","Pass","Pass","Pass"]},"106":{"id":106,"dealer":"S","vul":"None","test":true,"deal":{"N":"KT.T2.A2.QT76543","E":"Q.KJ654.KQJT8.82","S":"AJ7.AQ983.964.A9","W":"9865432.7.753.KJ"},"trump":"N","level":3,"need":9,"lead":"S5","auction":["1N","Pass","3N","Pass","Pass","Pass"]},"107":{"id":107,"dealer":"S","vul":"None","test":true,"deal":{"N":"A43.K983.T9743.K","E":"QT.J64.AQ82.9862","S":"872.AQT52.K6.AQ4","W":"KJ965.7.J5.JT753"},"trump":"H","level":4,"need":10,"lead":"CJ","auction":["1H","Pass","3H","Pass","4H","Pass","Pass","Pass"]}};
+var HAND=HANDS[SET_IDS[0]];
 
 /* ---------- storage ---------- */
 function load(k,d){try{var v=localStorage.getItem('dcp:'+k);return v===null?d:v;}catch(e){return d;}}
@@ -391,7 +428,7 @@ function onCardTap(id,seat){
   var card=G.hands[seat].find(function(c){return c.id===id;});
   if(!card||!legalCards(seat).some(function(c){return c.id===id;})) return;
   if(confirmTap&&selected!==id){ selected=id; render(); return; }
-  if(mode==='challenge'&&!G.counted){ G.counted=true; save('attempts',attempt); }
+  if(mode==='challenge'&&!G.counted){ G.counted=true; save('inprog',HAND.id); }
   G.history.push(snap()); doPlay(seat,card);
 }
 function undo(){
@@ -450,17 +487,69 @@ function stopClock(){tickClock();running=false;}
 setInterval(function(){tickClock();if(running&&mode==='challenge') el.clock.textContent=fmt(elapsed);},250);
 document.addEventListener('visibilitychange',function(){last=performance.now();});
 
+/* ---------- progress, attempts and licence ---------- */
+var RES=loadRes();
+function loadRes(){try{return JSON.parse(load('res','{}'))||{};}catch(e){return {};}}
+function saveRes(){save('res',JSON.stringify(RES));}
+function attemptsUsed(id){return RES[id]?RES[id].a.length:0;}
+function isDone(id){return !!(RES[id]&&RES[id].done);}
+function bestOf(id){var b=null;((RES[id]&&RES[id].a)||[]).forEach(function(x){if(!b||x.p>b.p||(x.p===b.p&&x.t<b.t)) b=x;});return b;}
+function bestIndex(id){var b=bestOf(id);return b?RES[id].a.indexOf(b)+1:0;}
+function recordAttempt(id,att){var r=RES[id]||(RES[id]={a:[],done:false});r.a.push(att);r.done=!!att.made||r.a.length>=MAX_ATT;saveRes();}
+function setTotals(){var pts=0,secs=0,list=[];SET_IDS.forEach(function(id){var b=bestOf(id);list.push(b?b.p:0);pts+=b?b.p:0;secs+=b?b.t:0;});return {pts:pts,secs:secs,list:list};}
+function setComplete(){return SET_IDS.every(isDone);}
+function nextHandId(){for(var id=SET_IDS[0];id<=LAST_ID;id++){if(!isDone(id)) return id;}return null;}
+function licStatus(){
+  var code=load('lic',''),ts=+load('licTs',0),kind=LICENSE.codes[code]||LICENSE.demo[code];
+  if(!kind) return {ok:false};
+  if(kind==='lifetime') return {ok:true,kind:'lifetime'};
+  var days=365-Math.floor((Date.now()-ts)/86400000);
+  return {ok:days>0,kind:'annual',daysLeft:days};
+}
+function canPlay(id){return id<=FREE_MAX||licStatus().ok;}
+function tryUnlock(code){code=String(code||'').replace(/\D/g,'');if(LICENSE.codes[code]||LICENSE.demo[code]){save('lic',code);save('licTs',Date.now());return true;}return false;}
+function contractText(h){h=h||HAND;return h.level+SYM[h.trump];}
+function contractHtml(h){h=h||HAND;return h.level+suitHtml(h.trump);}
+function resultText(id,att){var h=HANDS[id],diff=att.tr-h.need;return diff>=0?contractText(h)+' made'+(diff?' +'+diff:''):contractText(h)+' down '+(-diff);}
+
 /* ---------- flow ---------- */
+function loadHand(id){
+  HAND=HANDS[id];
+  var pos=SET_IDS.indexOf(id),att=Math.min(attemptsUsed(id)+1,MAX_ATT);
+  $('hNo').textContent=HAND.id;
+  el.badge.innerHTML=contractHtml()+' by South';
+  $('readyLine').innerHTML='Hand '+HAND.id+(pos>=0?' ('+(pos+1)+' of '+SET_IDS.length+')':' (bonus)')+', attempt '+att+' of '+MAX_ATT+
+    '<br><span class="contract">'+contractHtml()+' by South</span> West leads '+rankLabel(rankVal(HAND.lead[1]))+suitHtml(HAND.lead[0])+
+    (HAND.test?'<br><span style="opacity:.7;font-size:12px">Test deal</span>':'');
+  renderAuction();
+}
 function start(m){
+  if(m==='challenge'&&(isDone(HAND.id)||!canPlay(HAND.id))){ toReady(); return; }
   mode=m; newGame(); phase='play';
-  if(m==='challenge'){ attempt=(+load('attempts',0))+1; startClock(); el.clock.textContent='0:00'; }
+  if(m==='challenge'){ attempt=attemptsUsed(HAND.id)+1; startClock(); el.clock.textContent='0:00'; }
   else { running=false; el.clock.textContent=''; }
   el.clockRow.hidden=(m!=='challenge');
   closeAll(); render(); advance();
 }
-function toReady(){
-  token++; running=false; phase='ready'; newGame(); el.clockRow.hidden=true; closeAll(); render();
+function readyHand(id){
+  token++; running=false; phase='ready'; mode='challenge';
+  el.clockRow.hidden=true; closeAll();
+  loadHand(id); newGame(); render();
 }
+function toReady(){
+  var id=nextHandId();
+  readyHand(id!==null?id:LAST_ID);
+  if(id===null) showHands('You have played every hand available for now. New hands will be added.');
+  else if(!canPlay(id)) showPay();
+}
+function abandonIfNeeded(){
+  if(phase==='play'&&mode==='challenge'&&G&&G.counted&&!G.finished){
+    stopClock();
+    recordAttempt(HAND.id,{p:0,t:Math.round(elapsed/1000),tr:G.won.ns,made:false,q:1});
+    save('inprog','');
+  }
+}
+function leaveHand(){ abandonIfNeeded(); toReady(); }
 function scoreFor(made,under,att){
   if(made) return att===1?10:att===2?6:3;
   return under===1?5:under===2?3:under===3?1:0;
@@ -468,13 +557,14 @@ function scoreFor(made,under,att){
 function finish(){
   G.finished=true; phase='done'; stopClock(); render();
   var tricks=G.won.ns,diff=tricks-HAND.need,made=diff>=0,secs=Math.round(elapsed/1000);
-  var pts=null,newBest=false;
+  var pts=null,done=false;
   if(mode==='challenge'){
     pts=scoreFor(made,-diff,attempt);
-    var bp=+load('bestPts',-1),bt=+load('bestTime',1e9);
-    if(pts>bp||(pts===bp&&secs<bt)){save('bestPts',pts);save('bestTime',secs);newBest=true;}
+    recordAttempt(HAND.id,{p:pts,t:secs,tr:tricks,made:made});
+    save('inprog','');
+    done=isDone(HAND.id);
   }
-  resultData={tricks:tricks,diff:diff,made:made,secs:secs,pts:pts,newBest:newBest};
+  resultData={tricks:tricks,diff:diff,made:made,secs:secs,pts:pts,done:done,att:attempt};
   var tok=token; setTimeout(function(){ if(tok===token) showResult(); },800);
 }
 
@@ -552,7 +642,7 @@ function renderAuction(){
     '<div class="aucsum">Dealer '+NAMES[HAND.dealer]+', vul: '+HAND.vul+'</div>';
 }
 function statusText(){
-  if(phase==='ready') return 'Choose how to play';
+  if(phase==='ready') return 'Ready when you are';
   if(phase==='done') return 'Hand complete';
   if(pending) return NAMES[G.lastWinner]+' wins the trick';
   if(G.turn==='N') return 'Play from dummy';
@@ -574,18 +664,18 @@ function render(){
 }
 
 /* ---------- overlays / messages ---------- */
-function closeAll(){['ovSettings','ovInvite','ovResult','ovQuit'].forEach(function(i){$(i).classList.remove('show');});el.menu.classList.remove('open');$('menuBtn').setAttribute('aria-expanded','false');}
+function closeAll(){['ovSettings','ovInvite','ovResult','ovQuit','ovSet','ovHands','ovPay'].forEach(function(i){$(i).classList.remove('show');});el.menu.classList.remove('open');$('menuBtn').setAttribute('aria-expanded','false');}
 function baseUrl(){return location.href.split('#')[0].split('?')[0];}
-function resultWord(tricks){return tricks>=HAND.need?(HAND.level+'\u2660 made'):(HAND.level+'\u2660 down '+(HAND.need-tricks));}
-function buildMessage(name,pts,tricks,secs){
-  var link=baseUrl()+'?h='+HAND.id+'&n='+encodeURIComponent(name||'A friend')+'&s='+pts+'&t='+secs;
-  return {subject:'Can you beat my score on Declarer Challenge?',
-    body:(name?name:'I')+' scored '+pts+' points on hand '+HAND.id+' ('+resultWord(tricks)+') in '+fmtSec(secs)+'.\n\nCan you beat it? Play the same hand here:\n'+link+'\n\nScore first, time breaks a tie.'};
-}
+function setRange(){return SET_IDS[0]+' to '+SET_IDS[SET_IDS.length-1];}
 function buildInvite(name){
-  var link=baseUrl()+'?h='+HAND.id+'&n='+encodeURIComponent(name||'A friend');
-  return {subject:'Try this bridge hand on Declarer Challenge',
-    body:'I have been playing a tricky '+HAND.level+'\u2660 contract and thought you would like it. Can you make it? Play the same hand here:\n'+link};
+  var link=baseUrl()+'?set='+SET_IDS[0]+'&n='+encodeURIComponent(name||'A friend');
+  return {subject:'Try the Declarer Challenge bridge hands',
+    body:'I have been playing Declarer Challenge, a set of tricky bridge contracts to play as declarer. Try the same three hands and see how you get on:\n'+link+'\n\nIt works on a phone or tablet, even offline once it is installed.'};
+}
+function buildSetMessage(name){
+  var t=setTotals(),link=baseUrl()+'?set='+SET_IDS[0]+'&n='+encodeURIComponent(name||'A friend')+'&s='+t.pts+'&t='+t.secs+'&p='+t.list.join('-');
+  return {subject:'Can you beat my Declarer Challenge score?',
+    body:(name?name:'I')+' scored '+t.pts+' out of '+(10*SET_IDS.length)+' on the Declarer Challenge (hands '+setRange()+') in '+fmtSec(t.secs)+'. Hand by hand: '+t.list.join(', ')+'.\n\nCan you beat it? Play the same three hands here:\n'+link+'\n\nMost points wins; time breaks a tie.'};
 }
 function wireMail(nameInput,mailEl,copyEl,build){
   var upd=function(){
@@ -608,37 +698,74 @@ function showInvite(){
   el.menu.classList.remove('open');
   $('ovInvite').classList.add('show');
 }
+function afterHand(){
+  if(mode==='challenge'&&resultData&&resultData.done&&setComplete()&&load('setSeen','')!=='1'){ save('setSeen','1'); closeAll(); showSet(); return; }
+  toReady();
+}
 function showResult(){
-  var r=resultData,ch=mode==='challenge';
-  var title=r.made?(HAND.level+'\u2660 made'+(r.diff?' +'+r.diff:'')):(HAND.level+'\u2660 down '+(-r.diff));
-  var left='<h2>'+esc(title)+'</h2><p>Hand '+HAND.id+': you won '+r.tricks+' of 13 tricks; the contract needed '+HAND.need+'.</p>';
+  var r=resultData,ch=mode==='challenge',id=HAND.id;
+  var title=r.made?contractText()+' made'+(r.diff?' +'+r.diff:''):contractText()+' down '+(-r.diff);
+  var left='<h2>'+esc(title)+'</h2><p>Hand '+id+': you won '+r.tricks+' of 13 tricks; the contract needed '+HAND.need+'.</p>',right='';
   if(ch){
-    var bp=+load('bestPts',0),bt=+load('bestTime',0);
-    left+=(r.newBest?'<span class="badge">New personal best</span>':'')+
-      '<div class="pts">'+r.pts+'<small>points</small></div>'+
-      '<div class="kv"><div>Time<b>'+fmtSec(r.secs)+'</b></div><div>Attempt<b>'+attempt+'</b></div>'+
-      (r.newBest?'':'<div>Best<b>'+bp+' in '+fmtSec(bt)+'</b></div>')+'</div>';
+    var b=bestOf(id),remain=MAX_ATT-attemptsUsed(id);
+    left+='<div class="pts">'+r.pts+'<small>points</small></div>'+
+      '<div class="kv"><div>Time<b>'+fmtSec(r.secs)+'</b></div><div>Attempt<b>'+r.att+' of '+MAX_ATT+'</b></div></div>';
+    if(r.done) left+='<p>Hand complete. Your score for this hand is <b>'+b.p+' points</b> in '+fmtSec(b.t)+'.</p>';
+    else left+='<p>You have '+remain+' attempt'+(remain===1?'':'s')+' left. Making it next time scores '+(r.att+1===2?6:3)+' points.</p>';
+    var label=!r.done?'Try again':(setComplete()&&load('setSeen','')!=='1'?'See your challenge score':'Next hand');
+    right+='<div class="acts"><button class="btn primary" id="againBtn">'+label+'</button><button class="btn" id="practiceBtn">Practise this hand</button></div>'+
+      '<p class="muted" style="font-size:12px">Practising is not scored, and you can use undo.</p>';
   } else {
-    left+='<p class="muted">Practice is not scored. Play the challenge to earn points and set a time.</p>';
+    left+='<p class="muted">Practice is not scored.</p>';
+    right+='<div class="acts"><button class="btn primary" id="againBtn">Back to the challenge</button><button class="btn" id="practiceBtn">Practise again</button></div>';
   }
-  var right='';
-  if(ch){
-    if(incoming&&incoming.s!==null){
-      var beat=r.pts>incoming.s||(r.pts===incoming.s&&r.secs<incoming.t),tie=r.pts===incoming.s&&r.secs===incoming.t;
-      right+='<div class="cmp">'+(tie?'You matched '+esc(incoming.n)+' exactly.':beat?'You beat '+esc(incoming.n)+'!':esc(incoming.n)+' still leads: '+incoming.s+' points in '+fmtSec(incoming.t)+'.')+'</div>';
-    }
-    right+='<label class="f" for="pname">Your name (your friend sees it in the email)</label><input type="text" id="pname" maxlength="24" autocomplete="off" value="'+esc(load('name',''))+'">'+
-      '<div class="acts"><a class="btn primary" id="mailBtn" href="#">Challenge a friend</a><button class="btn" id="copyBtn">Copy message</button></div>'+
-      '<div class="acts"><button class="btn" id="againBtn">Play again</button><button class="btn" id="practiceBtn">Practise this hand</button></div>'+
-      '<p class="muted" style="font-size:12px">Your email app opens with the message ready. You choose who to send it to.</p>';
-  } else {
-    right+='<div class="acts"><button class="btn primary" id="againBtn">Play the challenge</button><button class="btn" id="practiceBtn">Practise again</button></div>';
-  }
-  $('resultPanel').innerHTML='<div class="res'+(ch?'':' one')+'"><div>'+left+'</div><div>'+right+'</div></div>';
+  $('resultPanel').innerHTML='<div class="res"><div>'+left+'</div><div>'+right+'</div></div>';
   $('ovResult').classList.add('show');
-  $('againBtn').onclick=toReady;
+  $('againBtn').onclick=afterHand;
   $('practiceBtn').onclick=function(){start('practice');};
-  if(ch) wireMail($('pname'),$('mailBtn'),$('copyBtn'),function(nm){return buildMessage(nm,r.pts,r.tricks,r.secs);});
+}
+function showSet(){
+  var t=setTotals();
+  var rows=SET_IDS.map(function(id){var b=bestOf(id);return '<tr><td>'+id+'</td><td>'+(b?esc(resultText(id,b))+', attempt '+bestIndex(id):'not played')+'</td><td><b>'+(b?b.p:0)+'</b></td><td>'+(b?fmtSec(b.t):'')+'</td></tr>';}).join('');
+  var left='<h2>Your challenge score</h2><p class="muted">Hands '+setRange()+'</p><div class="pts">'+t.pts+'<small>out of '+(10*SET_IDS.length)+'</small></div>'+
+    '<div class="kv"><div>Total time<b>'+fmtSec(t.secs)+'</b></div></div>'+
+    '<table class="tbl"><thead><tr><th>Hand</th><th>Result</th><th>Pts</th><th>Time</th></tr></thead><tbody>'+rows+'</tbody></table>';
+  var right='';
+  if(incoming&&incoming.s!==null){
+    var beat=t.pts>incoming.s||(t.pts===incoming.s&&t.secs<incoming.t),tie=t.pts===incoming.s&&t.secs===incoming.t;
+    right+='<div class="cmp">'+(tie?'You matched '+esc(incoming.n)+' exactly.':beat?'You beat '+esc(incoming.n)+'! ('+esc(incoming.n)+' scored '+incoming.s+' in '+fmtSec(incoming.t)+')':esc(incoming.n)+' still leads with '+incoming.s+' points in '+fmtSec(incoming.t)+'.')+'</div>';
+  }
+  right+='<label class="f" for="setName">Your name (your friend sees it in the email)</label><input type="text" id="setName" maxlength="24" autocomplete="off" value="'+esc(load('name',''))+'">'+
+    '<div class="acts"><a class="btn primary" id="setMail" href="#">Challenge a friend to beat this</a><button class="btn" id="setCopy">Copy message</button></div>'+
+    '<p class="muted" style="font-size:12px">Your email app opens with the message ready. You choose who to send it to.</p>'+
+    '<div class="acts"><button class="btn" id="setMore">Play more hands</button><button class="btn" data-close="ovSet">Close</button></div>';
+  $('setPanel').innerHTML='<div class="res"><div>'+left+'</div><div>'+right+'</div></div>';
+  $('ovSet').classList.add('show');
+  wireMail($('setName'),$('setMail'),$('setCopy'),buildSetMessage);
+  $('setMore').onclick=toReady;
+  $('setPanel').querySelector('[data-close]').onclick=function(){ $('ovSet').classList.remove('show'); };
+}
+function showHands(note){
+  var lic=licStatus(),rows='';
+  for(var id=SET_IDS[0];id<=LAST_ID;id++){
+    var h=HANDS[id],used=attemptsUsed(id),b=bestOf(id),status,btn;
+    if(!canPlay(id)){ status='Locked'; btn='<button class="btn" data-act="unlock">Unlock</button>'; }
+    else if(isDone(id)){ status='Done: '+b.p+' pts, '+fmtSec(b.t); btn='<button class="btn" data-act="practise" data-id="'+id+'">Practise</button>'; }
+    else { status=used?('Attempt '+used+' of '+MAX_ATT+' used'):'Not played'; btn='<button class="btn primary" data-act="play" data-id="'+id+'">Play</button>'; }
+    rows+='<tr><td>'+id+(SET_IDS.indexOf(id)>=0?'':'<br><span class="muted" style="font-size:11px">bonus</span>')+'</td><td>'+contractHtml(h)+'</td><td>'+status+'</td><td>'+btn+'</td></tr>';
+  }
+  var licLine=lic.ok?('Unlocked ('+lic.kind+(lic.daysLeft?', '+lic.daysLeft+' days left':'')+').'):('Hands '+SET_IDS[0]+' to '+FREE_MAX+' are free. Later hands need an unlock code.');
+  $('handsBody').innerHTML=(note?'<p><b>'+esc(note)+'</b></p>':'')+'<p class="muted">'+licLine+'</p>'+
+    '<table class="tbl"><thead><tr><th>Hand</th><th>Contract</th><th>Status</th><th></th></tr></thead><tbody>'+rows+'</tbody></table>'+
+    '<div class="acts">'+(setComplete()?'<button class="btn" data-act="set">My challenge score</button>':'')+'<button class="btn primary" data-close="ovHands">Close</button></div>';
+  $('handsBody').querySelector('[data-close]').onclick=function(){ $('ovHands').classList.remove('show'); };
+  el.menu.classList.remove('open');
+  $('ovHands').classList.add('show');
+}
+function showPay(){
+  $('payMsg').textContent=''; $('payCode').value='';
+  el.menu.classList.remove('open');
+  $('ovPay').classList.add('show');
 }
 
 /* ---------- wiring ---------- */
@@ -653,17 +780,31 @@ $('startChallenge').onclick=function(){start('challenge');};
 $('mUndo').onclick=function(){el.menu.classList.remove('open');undo();};
 $('mInvite').onclick=showInvite;
 $('mSettings').onclick=function(){ $('optConfirm').checked=confirmTap; $('optBig').checked=bigCards; el.menu.classList.remove('open'); $('ovSettings').classList.add('show'); };
-$('mRestart').onclick=toReady;
+$('mRestart').onclick=leaveHand;
+$('mHands').onclick=function(){ showHands(); };
 $('quitBtn').onclick=function(){
   var t='Go back to the start, or leave the app.';
   if(phase==='play') t=(mode==='challenge'&&G.counted)?'You have already played a card, so leaving now uses up this attempt.':'Your progress on this hand will be lost.';
   $('quitText').textContent=t; el.menu.classList.remove('open'); $('ovQuit').classList.add('show');
 };
-$('quitRestart').onclick=toReady;
-$('quitExit').onclick=function(){ try{window.close();}catch(e){} setTimeout(function(){ location.href='https://bridgescorer.com/'; },300); };
+$('quitRestart').onclick=leaveHand;
+$('quitExit').onclick=function(){ abandonIfNeeded(); try{window.close();}catch(e){} setTimeout(function(){ location.href='https://bridgescorer.com/'; },300); };
 document.addEventListener('click',function(e){ if(el.menu.classList.contains('open')&&!e.target.closest('#menu')&&!e.target.closest('#menuBtn')){ el.menu.classList.remove('open'); $('menuBtn').setAttribute('aria-expanded','false'); } });
 $('menuBtn').onclick=function(){ var o=el.menu.classList.toggle('open'); this.setAttribute('aria-expanded',o?'true':'false'); };
-$('btnReset').onclick=function(){ ['bestPts','bestTime','attempts'].forEach(function(k){try{localStorage.removeItem('dcp:'+k);}catch(e){}}); this.textContent='Scores reset'; };
+$('btnReset').onclick=function(){ ['res','setSeen','inprog','bestPts','bestTime','attempts'].forEach(function(k){try{localStorage.removeItem('dcp:'+k);}catch(e){}}); RES={}; readyHand(nextHandId()); $('ovSettings').classList.add('show'); this.textContent='Scores reset'; };
+$('btnResetLic').onclick=function(){ ['lic','licTs'].forEach(function(k){try{localStorage.removeItem('dcp:'+k);}catch(e){}}); this.textContent='Unlock removed'; };
+$('handsBody').onclick=function(e){
+  var b=e.target.closest('[data-act]'); if(!b) return;
+  var act=b.getAttribute('data-act'),id=+b.getAttribute('data-id');
+  if(act==='play') readyHand(id);
+  else if(act==='practise'){ closeAll(); loadHand(id); start('practice'); }
+  else if(act==='unlock') showPay();
+  else if(act==='set'){ closeAll(); showSet(); }
+};
+$('payGo').onclick=function(){
+  if(tryUnlock($('payCode').value)){ $('payMsg').textContent='Unlocked. Thank you!'; setTimeout(function(){ $('ovPay').classList.remove('show'); toReady(); },900); }
+  else $('payMsg').textContent='That code is not recognised. Check the 6 digits and try again.';
+};
 $('optBig').onchange=function(){ bigCards=this.checked; save('big',bigCards?'1':'0'); layout(); render(); };
 $('optConfirm').onchange=function(){ confirmTap=this.checked; save('confirm',confirmTap?'1':'0'); selected=null; render(); };
 Array.prototype.forEach.call(document.querySelectorAll('[data-close]'),function(b){
@@ -676,20 +817,23 @@ window.addEventListener('orientationchange',function(){ setTimeout(function(){ l
 
 /* ---------- init ---------- */
 (function init(){
-  $('hNo').textContent=HAND.id;
-  el.badge.innerHTML=HAND.level+suitHtml(HAND.trump)+' by South';
-  $('readyLine').innerHTML='Hand '+HAND.id+'<br><span class="contract">'+HAND.level+suitHtml(HAND.trump)+' by South</span><br>West leads '+rankLabel(rankVal(HAND.lead[1]))+suitHtml(HAND.lead[0]);
-  renderAuction();
+  var ip=load('inprog','');
+  if(ip){ var pid=+ip; if(HANDS[pid]&&!isDone(pid)) recordAttempt(pid,{p:0,t:0,tr:0,made:false,q:1}); save('inprog',''); }
+  $('payAnnual').href=LICENSE.annualUrl; $('payLife').href=LICENSE.lifeUrl;
   try{
     var q=new URLSearchParams(location.search);
-    if(q.get('h')==='1'){
+    if(q.get('set')===String(SET_IDS[0])){
       var n=(q.get('n')||'A friend').slice(0,24),hasScore=q.get('s')!==null&&q.get('t')!==null&&isFinite(+q.get('s'))&&isFinite(+q.get('t'));
       incoming={n:n,s:hasScore?+q.get('s'):null,t:hasScore?+q.get('t'):null};
       var box=$('incoming'); box.hidden=false;
-      box.textContent=hasScore?(n+' scored '+incoming.s+' points in '+fmtSec(incoming.t)+'. Can you beat it?'):(n+' invites you to try this hand.');
+      box.textContent=hasScore?(n+' scored '+incoming.s+' out of '+(10*SET_IDS.length)+' in '+fmtSec(incoming.t)+'. Can you beat it?'):(n+' invites you to try these three hands.');
     }
   }catch(e){}
+  var id=nextHandId();
+  loadHand(id!==null?id:LAST_ID);
   newGame(); layout(); render();
+  if(id===null) showHands('You have played every hand available for now. New hands will be added.');
+  else if(!canPlay(id)) showPay();
   requestAnimationFrame(function(){ layout(); render(); });
 })();
 })();
