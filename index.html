@@ -138,6 +138,11 @@ body{background:var(--bg);color:var(--panel-ink);font-family:-apple-system,"Sego
 .panel p{margin:4px 0;font-size:14px;line-height:1.4}
 .muted{color:var(--muted)}
 .panel .r{color:var(--red)}
+.panel h3{margin:12px 0 4px;font-size:15px}
+.pill{display:inline-block;font-size:12px;font-weight:700;padding:3px 10px;border-radius:20px;margin:2px 0 10px}
+.pill.on{background:#dff3e6;color:#136c34}
+.pill.off{background:#f3e6d9;color:#8a5a1e}
+.futurenote{background:rgba(214,173,85,.14);border:1px solid var(--line);border-radius:8px;padding:8px 10px;margin:4px 0 10px;font-size:14px}
 .how{margin:6px 0 0;padding-left:20px;font-size:14px;line-height:1.45}
 .how li{margin:0 0 7px}
 .tbl{width:100%;border-collapse:collapse;font-size:14px;margin-top:6px}
@@ -259,6 +264,7 @@ input[type=text]{font:inherit;font-size:16px;width:100%;min-height:40px;border-r
     <button class="mbtn" id="menuBtn" aria-expanded="false">Menu</button>
     <nav id="menu" aria-label="Menu">
       <button class="mbtn" id="mUndo">Undo <small>practice</small></button>
+      <button class="mbtn" id="mHome">Home</button>
       <button class="mbtn" id="mHands">My hands</button>
       <button class="mbtn" id="mHelp">How to play</button>
       <button class="mbtn" id="mInvite">Invite a friend</button>
@@ -290,6 +296,8 @@ input[type=text]{font:inherit;font-size:16px;width:100%;min-height:40px;border-r
     <div class="acts"><button class="btn primary" data-close="ovQuit">Keep playing</button><button class="btn" id="quitRestart">Back to the start</button><button class="btn" id="quitExit">Exit to Bridge at Sea</button></div>
   </div></div>
 
+  <div class="ov" id="ovHome"><div class="panel" id="homeBody"></div></div>
+
   <div class="ov" id="ovIntro"><div class="panel">
     <h2>How it works</h2>
     <div id="introBody"></div>
@@ -315,6 +323,11 @@ input[type=text]{font:inherit;font-size:16px;width:100%;min-height:40px;border-r
   </div></div>
 
   <div class="ov" id="ovResult"><div class="panel" id="resultPanel"></div></div>
+
+  <div class="ov" id="ovWhy"><div class="panel">
+    <div id="whyBody"></div>
+    <div class="acts"><button class="btn primary" data-close="ovWhy">Close</button></div>
+  </div></div>
 </div>
 
 <div id="rotate"><svg viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2.5"/><path d="M22 12a10 10 0 0 0-3-6.5M2 12a10 10 0 0 0 3 6.5"/></svg><div>Turn your phone sideways to play</div></div>
@@ -332,12 +345,13 @@ var NAMES={N:'North',E:'East',S:'South',W:'West'};
 var RNAME={11:'J',12:'Q',13:'K',14:'A'};
 
 /* Game rules */
-var BUILD='2026-09-21 g';       // shown in Settings so you can tell which version a phone is running
+var BUILD='2026-09-22 a';       // shown in Settings so you can tell which version a phone is running
 var GATE_URL='';               // later: the bridgescorer.com sign-up gate page. Challenge links then point there instead of straight at the app.
-var MAX_ATT=3;                 // attempts allowed per hand
-var SET_IDS=[100,101,102];     // the three-hand challenge that is sent to friends
-var FREE_MAX=105;              // hands up to here are free (103-105 are the free extras)
-var LAST_ID=107;               // last hand in this build
+var MAX_ATT=3;
+var OVER_BONUS=1, OVER_CAP=2;  // each overtrick adds this many points, up to this many overtricks per hand                 // attempts allowed per hand
+var SET_SIZE=3, FIRST_ID=100;  // every three hands make one challenge (100-102, 103-105, 106-108, ...)
+var FREE_MAX=105;              // challenges 1 and 2 (hands 100-105) are free
+var LAST_ID=108;               // last hand in this build
 
 /* Licence: same numeric 6-digit pattern as the other Bridge at Sea apps (5xxxxx = this app).
    TODO before release: create the two Ko-fi shop items and paste their links below. */
@@ -349,8 +363,8 @@ var LICENSE={
 };
 
 /* PLACEHOLDER hands (test:true). Random deals from a fixed seed, NOT verified, NOT the real hands. */
-var HANDS={"100":{"id":100,"dealer":"S","vul":"None","test":true,"deal":{"N":"KT98.K64.Q5.A862","E":"6.T95.KJ743.KT54","S":"AQ732.J.A96.QJ73","W":"J54.AQ8732.T82.9"},"trump":"S","level":4,"need":10,"lead":"H7","auction":["1S","Pass","4S","Pass","Pass","Pass"],"sol":["HK","HJ","SK","SA","SQ","ST","S7","S9","H6","S3","S2","S8","H4","DA","D9","DQ","C8","CQ","D6","D5","C7","CA","C6","CJ","C3","C2"]},"101":{"id":101,"dealer":"S","vul":"None","test":true,"deal":{"N":"K82.Q74.QJT7.JT3","E":"AQT974.3.952.AQ2","S":"3.AKJT8.A4.K9654","W":"J65.9652.K863.87"},"trump":"H","level":4,"need":10,"lead":"D3","auction":["1H","Pass","3H","Pass","4H","Pass","Pass","Pass"],"sol":["DQ","DA","S3","SK","HA","S8","HK","HQ","HJ","H7","HT","H4","D4","DJ","D7","C9","C6","CJ","CT","CK","C5","C3","S2","H8","C4","DT"]},"102":{"id":102,"dealer":"S","vul":"None","test":true,"deal":{"N":"953.762.AQ97.KT5","E":"T.T9853.KT5.9874","S":"AJ74.KQ4.J864.AJ","W":"KQ862.AJ.32.Q632"},"trump":"N","level":3,"need":9,"lead":"SK","auction":["1N","Pass","3N","Pass","Pass","Pass"],"sol":["S9","SA","SJ","S5","CK","CA","S7","S3","S4","H7","CT","CJ","HK","H6","DQ","DJ","D8","DA","H2","HQ","H4","C5","D6","D9","D7","D4"]},"103":{"id":103,"dealer":"S","vul":"None","test":true,"deal":{"N":"854.A53.A64.A954","E":"J.KJT96.K85.Q863","S":"AKQ632.Q872.QT3.","W":"T97.4.J972.KJT72"},"trump":"S","level":4,"need":10,"lead":"C7","auction":["1S","Pass","3S","Pass","4S","Pass","Pass","Pass"],"sol":["CA","SA","SK","S8","SQ","S5","S6","S4","DA","DQ","HA","H8","H5","HQ","S3","H3","H7","D6","DT","D4","S2","C9","H2","C5","D3","C4"]},"104":{"id":104,"dealer":"S","vul":"None","test":true,"deal":{"N":"Q63.K54.J98.AT65","E":"K852.7.6542.Q742","S":"AJ4.AJT93.QT73.K","W":"T97.Q862.AK.J983"},"trump":"H","level":4,"need":10,"lead":"ST","auction":["1H","Pass","3H","Pass","4H","Pass","Pass","Pass"],"sol":["SQ","SA","SJ","S6","S4","S3","DJ","DQ","CA","CK","HK","HJ","D9","DT","CT","H3","HT","H5","H9","H4","HA","D8","D7","C6","D3","C5"]},"105":{"id":105,"dealer":"S","vul":"None","test":true,"deal":{"N":"Q52.A85.Q83.KJ86","E":"86.K642.AK742.92","S":"AKJT7..J965.AT43","W":"943.QJT973.T.Q75"},"trump":"S","level":4,"need":10,"lead":"HQ","auction":["1S","Pass","3S","Pass","4S","Pass","Pass","Pass"],"sol":["HA","SA","SK","SQ","SJ","S5","ST","S2","S7","H8","CA","CJ","CT","C8","C4","CK","D8","DJ","C3","C6","H5","D9","D6","DQ","D5","D3"]},"106":{"id":106,"dealer":"S","vul":"None","test":true,"deal":{"N":"KT.T2.A2.QT76543","E":"Q.KJ654.KQJT8.82","S":"AJ7.AQ983.964.A9","W":"9865432.7.753.KJ"},"trump":"N","level":3,"need":9,"lead":"S5","auction":["1N","Pass","3N","Pass","Pass","Pass"],"sol":["SK","SA","SJ","ST","S7","HT","HA","H2","CA","CQ","C9","CT","D2","HQ","C7","H9","DA","D9","C6","H8","C5","H3","C4","D6","C3","D4"]},"107":{"id":107,"dealer":"S","vul":"None","test":true,"deal":{"N":"A43.K983.T9743.K","E":"QT.J64.AQ82.9862","S":"872.AQT52.K6.AQ4","W":"KJ965.7.J5.JT753"},"trump":"H","level":4,"need":10,"lead":"CJ","auction":["1H","Pass","3H","Pass","4H","Pass","Pass","Pass"],"sol":["CK","CA","S8","SA","S4","S7","DK","DT","S2","S3","HK","CQ","H9","HA","D6","D9","C4","H8","H3","HT","HQ","D7","H5","D4","H2","D3"]}};
-var HAND=HANDS[SET_IDS[0]];
+var HANDS={"100":{"id":100,"dealer":"S","vul":"None","test":true,"deal":{"N":"KT98.K64.Q5.A862","E":"6.T95.KJ743.KT54","S":"AQ732.J.A96.QJ73","W":"J54.AQ8732.T82.9"},"trump":"S","level":4,"need":10,"lead":"H7","auction":["1S","Pass","4S","Pass","Pass","Pass"],"sol":["HK","HJ","SK","SA","SQ","ST","S7","S9","H6","S3","S2","S8","H4","DA","D9","DQ","C8","CQ","D6","D5","C7","CA","C6","CJ","C3","C2"],"pbp":["Trick 1: West 7♥︎, North K♥︎, East 5♥︎, South J♥︎. North wins.","Trick 2: North K♠︎, East 6♠︎, South A♠︎, West 4♠︎. South wins.","Trick 3: South Q♠︎, West 5♠︎, North 10♠︎, East 3♦︎. South wins.","Trick 4: South 7♠︎, West J♠︎, North 9♠︎, East 4♦︎. West wins.","Trick 5: West 3♥︎, North 6♥︎, East 10♥︎, South 3♠︎. South wins.","Trick 6: South 2♠︎, West 2♥︎, North 8♠︎, East 4♣︎. North wins.","Trick 7: North 4♥︎, East 9♥︎, South A♦︎, West 8♥︎. East wins.","Trick 8: East 7♦︎, South 9♦︎, West 10♦︎, North Q♦︎. North wins.","Trick 9: North 8♣︎, East 5♣︎, South Q♣︎, West 9♣︎. South wins.","Trick 10: South 6♦︎, West 2♦︎, North 5♦︎, East J♦︎. East wins.","Trick 11: East K♣︎, South 7♣︎, West Q♥︎, North A♣︎. North wins.","Trick 12: North 6♣︎, East 10♣︎, South J♣︎, West A♥︎. South wins.","Trick 13: South 3♣︎, West 8♦︎, North 2♣︎, East K♦︎. South wins."]},"101":{"id":101,"dealer":"S","vul":"None","test":true,"deal":{"N":"K82.Q74.QJT7.JT3","E":"AQT974.3.952.AQ2","S":"3.AKJT8.A4.K9654","W":"J65.9652.K863.87"},"trump":"H","level":4,"need":10,"lead":"D3","auction":["1H","Pass","3H","Pass","4H","Pass","Pass","Pass"],"sol":["DQ","DA","S3","SK","HA","S8","HK","HQ","HJ","H7","HT","H4","D4","DJ","D7","C9","C6","CJ","CT","CK","C5","C3","S2","H8","C4","DT"],"pbp":["Trick 1: West 3♦︎, North Q♦︎, East 2♦︎, South A♦︎. South wins.","Trick 2: South 3♠︎, West 5♠︎, North K♠︎, East A♠︎. East wins.","Trick 3: East 7♠︎, South A♥︎, West 6♠︎, North 8♠︎. South wins.","Trick 4: South K♥︎, West 2♥︎, North Q♥︎, East 3♥︎. South wins.","Trick 5: South J♥︎, West 5♥︎, North 7♥︎, East 4♠︎. South wins.","Trick 6: South 10♥︎, West 6♥︎, North 4♥︎, East 9♠︎. South wins.","Trick 7: South 4♦︎, West 6♦︎, North J♦︎, East 5♦︎. North wins.","Trick 8: North 7♦︎, East 9♦︎, South 9♣︎, West 8♦︎. East wins.","Trick 9: East 2♣︎, South 6♣︎, West 8♣︎, North J♣︎. North wins.","Trick 10: North 10♣︎, East Q♣︎, South K♣︎, West 7♣︎. South wins.","Trick 11: South 5♣︎, West 9♥︎, North 3♣︎, East A♣︎. West wins.","Trick 12: West J♠︎, North 2♠︎, East Q♠︎, South 8♥︎. South wins.","Trick 13: South 4♣︎, West K♦︎, North 10♦︎, East 10♠︎. South wins."]},"102":{"id":102,"dealer":"S","vul":"None","test":true,"deal":{"N":"953.762.AQ97.KT5","E":"T.T9853.KT5.9874","S":"AJ74.KQ4.J864.AJ","W":"KQ862.AJ.32.Q632"},"trump":"N","level":3,"need":9,"lead":"SK","auction":["1N","Pass","3N","Pass","Pass","Pass"],"sol":["S9","SA","SJ","S5","CK","CA","S7","S3","S4","H7","CT","CJ","HK","H6","DQ","DJ","D8","DA","H2","HQ","H4","C5","D6","D9","D7","D4"],"pbp":["Trick 1: West K♠︎, North 9♠︎, East 10♠︎, South A♠︎. South wins.","Trick 2: South J♠︎, West Q♠︎, North 5♠︎, East 3♥︎. West wins.","Trick 3: West 2♣︎, North K♣︎, East 4♣︎, South A♣︎. South wins.","Trick 4: South 7♠︎, West 2♠︎, North 3♠︎, East 5♥︎. South wins.","Trick 5: South 4♠︎, West 6♠︎, North 7♥︎, East 8♥︎. West wins.","Trick 6: West 3♣︎, North 10♣︎, East 7♣︎, South J♣︎. South wins.","Trick 7: South K♥︎, West A♥︎, North 6♥︎, East 9♥︎. West wins.","Trick 8: West 3♦︎, North Q♦︎, East K♦︎, South J♦︎. East wins.","Trick 9: East 10♦︎, South 8♦︎, West 2♦︎, North A♦︎. North wins.","Trick 10: North 2♥︎, East 10♥︎, South Q♥︎, West J♥︎. South wins.","Trick 11: South 4♥︎, West 6♣︎, North 5♣︎, East 8♣︎. South wins.","Trick 12: South 6♦︎, West 8♠︎, North 9♦︎, East 5♦︎. North wins.","Trick 13: North 7♦︎, East 9♣︎, South 4♦︎, West Q♣︎. North wins."]},"103":{"id":103,"dealer":"S","vul":"None","test":true,"deal":{"N":"854.A53.A64.A954","E":"J.KJT96.K85.Q863","S":"AKQ632.Q872.QT3.","W":"T97.4.J972.KJT72"},"trump":"S","level":4,"need":10,"lead":"C7","auction":["1S","Pass","3S","Pass","4S","Pass","Pass","Pass"],"sol":["CA","SA","SK","S8","SQ","S5","S6","S4","DA","DQ","HA","H8","H5","HQ","S3","H3","H7","D6","DT","D4","S2","C9","H2","C5","D3","C4"],"pbp":["Trick 1: West 7♣︎, North A♣︎, East 3♣︎, South A♠︎. South wins.","Trick 2: South K♠︎, West 7♠︎, North 8♠︎, East J♠︎. South wins.","Trick 3: South Q♠︎, West 9♠︎, North 5♠︎, East 6♥︎. South wins.","Trick 4: South 6♠︎, West 10♠︎, North 4♠︎, East 9♥︎. West wins.","Trick 5: West 2♦︎, North A♦︎, East 5♦︎, South Q♦︎. North wins.","Trick 6: North A♥︎, East 10♥︎, South 8♥︎, West 4♥︎. North wins.","Trick 7: North 5♥︎, East J♥︎, South Q♥︎, West 2♣︎. South wins.","Trick 8: South 3♠︎, West 7♦︎, North 3♥︎, East 6♣︎. South wins.","Trick 9: South 7♥︎, West 10♣︎, North 6♦︎, East K♥︎. East wins.","Trick 10: East K♦︎, South 10♦︎, West 9♦︎, North 4♦︎. East wins.","Trick 11: East Q♣︎, South 2♠︎, West J♣︎, North 9♣︎. South wins.","Trick 12: South 2♥︎, West J♦︎, North 5♣︎, East 8♦︎. South wins.","Trick 13: South 3♦︎, West K♣︎, North 4♣︎, East 8♣︎. South wins."]},"104":{"id":104,"dealer":"S","vul":"None","test":true,"deal":{"N":"Q63.K54.J98.AT65","E":"K852.7.6542.Q742","S":"AJ4.AJT93.QT73.K","W":"T97.Q862.AK.J983"},"trump":"H","level":4,"need":10,"lead":"ST","auction":["1H","Pass","3H","Pass","4H","Pass","Pass","Pass"],"sol":["SQ","SA","SJ","S6","S4","S3","DJ","DQ","CA","CK","HK","HJ","D9","DT","CT","H3","HT","H5","H9","H4","HA","D8","D7","C6","D3","C5"],"pbp":["Trick 1: West 10♠︎, North Q♠︎, East K♠︎, South A♠︎. South wins.","Trick 2: South J♠︎, West 7♠︎, North 6♠︎, East 2♠︎. South wins.","Trick 3: South 4♠︎, West 9♠︎, North 3♠︎, East 5♠︎. West wins.","Trick 4: West A♦︎, North J♦︎, East 2♦︎, South Q♦︎. West wins.","Trick 5: West 3♣︎, North A♣︎, East 2♣︎, South K♣︎. North wins.","Trick 6: North K♥︎, East 7♥︎, South J♥︎, West 2♥︎. North wins.","Trick 7: North 9♦︎, East 4♦︎, South 10♦︎, West K♦︎. West wins.","Trick 8: West 8♣︎, North 10♣︎, East Q♣︎, South 3♥︎. South wins.","Trick 9: South 10♥︎, West 6♥︎, North 5♥︎, East 5♦︎. South wins.","Trick 10: South 9♥︎, West 8♥︎, North 4♥︎, East 4♣︎. South wins.","Trick 11: South A♥︎, West Q♥︎, North 8♦︎, East 8♠︎. South wins.","Trick 12: South 7♦︎, West 9♣︎, North 6♣︎, East 6♦︎. South wins.","Trick 13: South 3♦︎, West J♣︎, North 5♣︎, East 7♣︎. South wins."]},"105":{"id":105,"dealer":"S","vul":"None","test":true,"deal":{"N":"Q52.A85.Q83.KJ86","E":"86.K642.AK742.92","S":"AKJT7..J965.AT43","W":"943.QJT973.T.Q75"},"trump":"S","level":4,"need":10,"lead":"HQ","auction":["1S","Pass","3S","Pass","4S","Pass","Pass","Pass"],"sol":["HA","SA","SK","SQ","SJ","S5","ST","S2","S7","H8","CA","CJ","CT","C8","C4","CK","D8","DJ","C3","C6","H5","D9","D6","DQ","D5","D3"],"pbp":["Trick 1: West Q♥︎, North A♥︎, East 2♥︎, South A♠︎. South wins.","Trick 2: South K♠︎, West 3♠︎, North Q♠︎, East 6♠︎. South wins.","Trick 3: South J♠︎, West 4♠︎, North 5♠︎, East 8♠︎. South wins.","Trick 4: South 10♠︎, West 9♠︎, North 2♠︎, East 2♦︎. South wins.","Trick 5: South 7♠︎, West 3♥︎, North 8♥︎, East 4♦︎. South wins.","Trick 6: South A♣︎, West 5♣︎, North J♣︎, East 2♣︎. South wins.","Trick 7: South 10♣︎, West 7♣︎, North 8♣︎, East 9♣︎. South wins.","Trick 8: South 4♣︎, West Q♣︎, North K♣︎, East 4♥︎. North wins.","Trick 9: North 8♦︎, East 7♦︎, South J♦︎, West 10♦︎. South wins.","Trick 10: South 3♣︎, West 7♥︎, North 6♣︎, East 6♥︎. North wins.","Trick 11: North 5♥︎, East K♥︎, South 9♦︎, West 9♥︎. East wins.","Trick 12: East A♦︎, South 6♦︎, West 10♥︎, North Q♦︎. East wins.","Trick 13: East K♦︎, South 5♦︎, West J♥︎, North 3♦︎. East wins."]},"106":{"id":106,"dealer":"S","vul":"None","test":true,"deal":{"N":"KT.T2.A2.QT76543","E":"Q.KJ654.KQJT8.82","S":"AJ7.AQ983.964.A9","W":"9865432.7.753.KJ"},"trump":"N","level":3,"need":9,"lead":"S5","auction":["1N","Pass","3N","Pass","Pass","Pass"],"sol":["SK","SA","SJ","ST","S7","HT","HA","H2","CA","CQ","C9","CT","D2","HQ","C7","H9","DA","D9","C6","H8","C5","H3","C4","D6","C3","D4"],"pbp":["Trick 1: West 5♠︎, North K♠︎, East Q♠︎, South A♠︎. South wins.","Trick 2: South J♠︎, West 2♠︎, North 10♠︎, East 4♥︎. South wins.","Trick 3: South 7♠︎, West 3♠︎, North 10♥︎, East 8♦︎. South wins.","Trick 4: South A♥︎, West 7♥︎, North 2♥︎, East 5♥︎. South wins.","Trick 5: South A♣︎, West J♣︎, North Q♣︎, East 2♣︎. South wins.","Trick 6: South 9♣︎, West K♣︎, North 10♣︎, East 8♣︎. West wins.","Trick 7: West 4♠︎, North 2♦︎, East 10♦︎, South Q♥︎. West wins.","Trick 8: West 6♠︎, North 7♣︎, East 6♥︎, South 9♥︎. West wins.","Trick 9: West 3♦︎, North A♦︎, East J♦︎, South 9♦︎. North wins.","Trick 10: North 6♣︎, East J♥︎, South 8♥︎, West 8♠︎. North wins.","Trick 11: North 5♣︎, East Q♦︎, South 3♥︎, West 5♦︎. North wins.","Trick 12: North 4♣︎, East K♥︎, South 6♦︎, West 9♠︎. North wins.","Trick 13: North 3♣︎, East K♦︎, South 4♦︎, West 7♦︎. North wins."]},"107":{"id":107,"dealer":"S","vul":"None","test":true,"deal":{"N":"A43.K983.T9743.K","E":"QT.J64.AQ82.9862","S":"872.AQT52.K6.AQ4","W":"KJ965.7.J5.JT753"},"trump":"H","level":4,"need":10,"lead":"CJ","auction":["1H","Pass","3H","Pass","4H","Pass","Pass","Pass"],"sol":["CK","CA","S8","SA","S4","S7","DK","DT","S2","S3","HK","CQ","H9","HA","D6","D9","C4","H8","H3","HT","HQ","D7","H5","D4","H2","D3"],"pbp":["Trick 1: West J♣︎, North K♣︎, East 2♣︎, South A♣︎. South wins.","Trick 2: South 8♠︎, West 5♠︎, North A♠︎, East 10♠︎. North wins.","Trick 3: North 4♠︎, East Q♠︎, South 7♠︎, West 6♠︎. East wins.","Trick 4: East 2♦︎, South K♦︎, West 5♦︎, North 10♦︎. South wins.","Trick 5: South 2♠︎, West 9♠︎, North 3♠︎, East 8♦︎. West wins.","Trick 6: West 3♣︎, North K♥︎, East 6♣︎, South Q♣︎. North wins.","Trick 7: North 9♥︎, East 4♥︎, South A♥︎, West 7♥︎. South wins.","Trick 8: South 6♦︎, West J♦︎, North 9♦︎, East Q♦︎. East wins.","Trick 9: East 9♣︎, South 4♣︎, West 10♣︎, North 8♥︎. North wins.","Trick 10: North 3♥︎, East 6♥︎, South 10♥︎, West J♠︎. South wins.","Trick 11: South Q♥︎, West 5♣︎, North 7♦︎, East J♥︎. South wins.","Trick 12: South 5♥︎, West K♠︎, North 4♦︎, East A♦︎. South wins.","Trick 13: South 2♥︎, West 7♣︎, North 3♦︎, East 8♣︎. South wins."]},"108":{"id":108,"dealer":"S","vul":"None","test":true,"deal":{"N":"KQ9.975.A974.Q32","E":"73.J2.KQ5.KT7654","S":"JT542.AKQ63.3.AJ","W":"A86.T84.JT862.98"},"trump":"S","level":4,"need":10,"lead":"DJ","auction":["1S","Pass","4S","Pass","Pass","Pass"],"sol":["DA","D3","SK","SJ","D9","ST","S5","SQ","S9","S4","H9","HA","S2","H7","HK","H5","HQ","D7","H6","D4","H3","CQ","CA","C3","CJ","C2"],"pbp":["Trick 1: West J♦︎, North A♦︎, East 5♦︎, South 3♦︎. North wins.","Trick 2: North K♠︎, East 3♠︎, South J♠︎, West A♠︎. West wins.","Trick 3: West 2♦︎, North 9♦︎, East K♦︎, South 10♠︎. South wins.","Trick 4: South 5♠︎, West 6♠︎, North Q♠︎, East 7♠︎. North wins.","Trick 5: North 9♠︎, East 4♣︎, South 4♠︎, West 8♠︎. North wins.","Trick 6: North 9♥︎, East 2♥︎, South A♥︎, West 4♥︎. South wins.","Trick 7: South 2♠︎, West 6♦︎, North 7♥︎, East 5♣︎. South wins.","Trick 8: South K♥︎, West 8♥︎, North 5♥︎, East J♥︎. South wins.","Trick 9: South Q♥︎, West 10♥︎, North 7♦︎, East 6♣︎. South wins.","Trick 10: South 6♥︎, West 8♦︎, North 4♦︎, East 7♣︎. South wins.","Trick 11: South 3♥︎, West 8♣︎, North Q♣︎, East 10♣︎. South wins.","Trick 12: South A♣︎, West 9♣︎, North 3♣︎, East K♣︎. South wins.","Trick 13: South J♣︎, West 10♦︎, North 2♣︎, East Q♦︎. South wins."]}};
+var HAND=HANDS[FIRST_ID];
 
 /* ---------- storage ---------- */
 function load(k,d){try{var v=localStorage.getItem('dcp:'+k);return v===null?d:v;}catch(e){return d;}}
@@ -514,9 +528,18 @@ function isDone(id){return !!(RES[id]&&RES[id].done);}
 function bestOf(id){var b=null;((RES[id]&&RES[id].a)||[]).forEach(function(x){if(!b||x.p>b.p||(x.p===b.p&&x.t<b.t)) b=x;});return b;}
 function bestIndex(id){var b=bestOf(id);return b?RES[id].a.indexOf(b)+1:0;}
 function recordAttempt(id,att){var r=RES[id]||(RES[id]={a:[],done:false});r.a.push(att);r.done=!!att.made||r.a.length>=MAX_ATT;saveRes();}
-function setTotals(){var pts=0,secs=0,list=[];SET_IDS.forEach(function(id){var b=bestOf(id);list.push(b?b.p:0);pts+=b?b.p:0;secs+=b?b.t:0;});return {pts:pts,secs:secs,list:list};}
-function setComplete(){return SET_IDS.every(isDone);}
-function nextHandId(){for(var id=SET_IDS[0];id<=LAST_ID;id++){if(!isDone(id)) return id;}return null;}
+function setStart(id){return FIRST_ID+Math.floor((id-FIRST_ID)/SET_SIZE)*SET_SIZE;}
+function setIdsOf(sid){var a=[];for(var i=0;i<SET_SIZE;i++){if(HANDS[sid+i]) a.push(sid+i);}return a;}
+function challengeNo(sid){return (sid-FIRST_ID)/SET_SIZE+1;}
+function setRange(sid){var a=setIdsOf(sid);return a[0]+' to '+a[a.length-1];}
+function setTotals(sid){var pts=0,secs=0,list=[];setIdsOf(sid).forEach(function(id){var b=bestOf(id);list.push(b?b.p:0);pts+=b?b.p:0;secs+=b?b.t:0;});return {pts:pts,secs:secs,list:list};}
+function setComplete(sid){return setIdsOf(sid).every(isDone);}
+function setPending(sid){return setComplete(sid)&&load('setSeen'+sid,'')!=='1';}
+function nextHandId(){
+  if(incoming&&incoming.set&&!setComplete(incoming.set)){var ids=setIdsOf(incoming.set);for(var i=0;i<ids.length;i++){if(!isDone(ids[i])) return ids[i];}}
+  for(var id=FIRST_ID;id<=LAST_ID;id++){if(!isDone(id)) return id;}
+  return null;
+}
 function licStatus(){
   var code=load('lic',''),ts=+load('licTs',0),kind=LICENSE.codes[code]||LICENSE.demo[code];
   if(!kind) return {ok:false};
@@ -524,7 +547,7 @@ function licStatus(){
   var days=365-Math.floor((Date.now()-ts)/86400000);
   return {ok:days>0,kind:'annual',daysLeft:days};
 }
-function canPlay(id){return id<=FREE_MAX||licStatus().ok;}
+function canPlay(id){return id<=FREE_MAX||licStatus().ok||!!(incoming&&incoming.set&&setStart(id)===incoming.set);}
 function tryUnlock(code){code=String(code||'').replace(/\D/g,'');if(LICENSE.codes[code]||LICENSE.demo[code]){save('lic',code);save('licTs',Date.now());return true;}return false;}
 function contractText(h){h=h||HAND;return h.level+SYM[h.trump];}
 function contractHtml(h){h=h||HAND;return h.level+suitHtml(h.trump);}
@@ -547,25 +570,32 @@ function startDemo(id){
   el.clockRow.hidden=true; closeAll(); render(); advance();
 }
 function showDemoEnd(){
-  var t=G.won.ns;
+  var t=G.won.ns,id=HAND.id,sid=setStart(id);
   $('resultPanel').innerHTML='<h2>'+esc(contractText())+' made: how it is done</h2><p>Declarer takes '+t+' tricks; the contract needed '+HAND.need+'.</p>'+
-    '<div class="acts"><button class="btn primary" id="demoBack">'+(setComplete()&&load('setSeen','')!=='1'?'See your challenge score':'Next hand')+'</button><button class="btn" id="demoAgain">Watch again</button></div>';
+    '<div class="acts"><button class="btn primary" id="demoBack">'+(setPending(sid)?'See your challenge score':'Next hand')+'</button>'+(HAND.pbp?'<button class="btn" id="demoWhy">Read the explanation</button>':'')+'<button class="btn" id="demoAgain">Watch again</button></div>';
   $('ovResult').classList.add('show');
-  var id=HAND.id;
   $('demoAgain').onclick=function(){ startDemo(id); };
-  $('demoBack').onclick=function(){ if(setComplete()&&load('setSeen','')!=='1'){ save('setSeen','1'); closeAll(); showSet(); } else toReady(); };
+  if($('demoWhy')) $('demoWhy').onclick=function(){ showWhy(id); };
+  $('demoBack').onclick=function(){ if(setPending(sid)){ save('setSeen'+sid,'1'); closeAll(); showSet(sid); } else toReady(); };
 }
 
 /* ---------- flow ---------- */
+function renderIncoming(id){
+  var box=$('incoming');
+  if(incoming&&incoming.set&&setStart(id)===incoming.set&&!setComplete(incoming.set)){
+    box.hidden=false;
+    box.textContent=incoming.s!==null?(incoming.n+' scored '+incoming.s+' points in '+fmtSec(incoming.t)+'. Can you beat it?'):(incoming.n+' invites you to try these three hands.');
+  } else box.hidden=true;
+}
 function loadHand(id){
   HAND=HANDS[id];
-  var pos=SET_IDS.indexOf(id),att=Math.min(attemptsUsed(id)+1,MAX_ATT);
+  var sid=setStart(id),pos=id-sid,att=Math.min(attemptsUsed(id)+1,MAX_ATT);
   $('hNo').textContent=HAND.id;
   el.badge.innerHTML=contractHtml()+' by South';
-  $('readyLine').innerHTML='Hand '+HAND.id+(pos>=0?' ('+(pos+1)+' of '+SET_IDS.length+')':' (bonus)')+', attempt '+att+' of '+MAX_ATT+
+  $('readyLine').innerHTML='Challenge '+challengeNo(sid)+': hand '+(pos+1)+' of '+setIdsOf(sid).length+', attempt '+att+' of '+MAX_ATT+
     '<br><span class="contract">'+contractHtml()+' by South</span> West leads '+rankLabel(rankVal(HAND.lead[1]))+suitHtml(HAND.lead[0])+
     (HAND.test?'<br><span style="opacity:.7;font-size:12px">Test deal</span>':'');
-  renderAuction();
+  renderAuction(); renderIncoming(id);
 }
 function start(m){
   if(m==='challenge'&&(isDone(HAND.id)||!canPlay(HAND.id))){ toReady(); return; }
@@ -586,6 +616,41 @@ function toReady(){
   if(id===null) showHands('You have played every hand available for now. New hands will be added.');
   else if(!canPlay(id)) showPay();
 }
+function isNewPlayer(){return Object.keys(RES).length===0;}
+function goHome(){
+  var id=nextHandId();
+  readyHand(id!==null?id:LAST_ID);
+  showHome();
+}
+function refreshHomeConn(){
+  var on=navigator.onLine;
+  var pill=$('homePill'); if(pill) pill.innerHTML='<span class="pill '+(on?'on':'off')+'">'+(on?'Online':'Offline')+'</span>';
+  var note=$('homeConnNote');
+  if(note) note.textContent=on
+    ?'Not switched on yet. Coming soon.'
+    :'You are offline. Scores are saved on this phone and will be ready to send once this feature is live.';
+}
+function showHome(){
+  var id=nextHandId();
+  var doneList=Object.keys(RES).filter(function(k){return isDone(k);});
+  var totalPts=0; doneList.forEach(function(k){var b=bestOf(k); if(b) totalPts+=b.p;});
+  var greet=isNewPlayer()?'Welcome':'Welcome back';
+  var status;
+  if(id===null) status='You have played every hand available. New hands will be added soon.';
+  else if(!doneList.length) status='Ready when you are. Challenge '+challengeNo(setStart(id))+' is hands '+setRange(setStart(id))+'.';
+  else status=doneList.length+' hand'+(doneList.length===1?'':'s')+' completed so far, '+totalPts+' points in total.';
+  $('homeBody').innerHTML='<h2>'+greet+'</h2><p>'+esc(status)+'</p>'+
+    '<div id="homePill"></div>'+
+    '<div class="futurenote"><b>Post my score to the ladder</b><br><span class="muted" style="font-size:13px" id="homeConnNote"></span></div>'+
+    '<div class="acts">'+(id!==null?'<button class="btn primary" id="homeContinue">Continue</button>':'')+'<button class="btn" id="homeScores">View my scores</button></div>'+
+    '<div class="acts"><a class="btn" id="homeSite" href="https://bridgescorer.com/" target="_blank" rel="noopener">Visit Bridge at Sea</a><button class="btn" id="homeQuit">Quit</button></div>';
+  refreshHomeConn();
+  el.menu.classList.remove('open');
+  $('ovHome').classList.add('show');
+  if($('homeContinue')) $('homeContinue').onclick=function(){ $('ovHome').classList.remove('show'); toReady(); };
+  $('homeScores').onclick=function(){ closeAll(); showHands(); };
+  $('homeQuit').onclick=function(){ $('quitBtn').click(); };
+}
 function abandonIfNeeded(){
   if(phase==='play'&&mode==='challenge'&&G&&G.counted&&!G.finished){
     stopClock();
@@ -594,8 +659,8 @@ function abandonIfNeeded(){
   }
 }
 function leaveHand(){ abandonIfNeeded(); toReady(); }
-function scoreFor(made,under,att){
-  if(made) return att===1?10:att===2?6:3;
+function scoreFor(made,under,att,over){
+  if(made) return (att===1?10:att===2?6:3)+Math.min(over||0,OVER_CAP)*OVER_BONUS;
   return under===1?5:under===2?3:under===3?1:0;
 }
 function finish(){
@@ -604,7 +669,7 @@ function finish(){
   var tricks=G.won.ns,diff=tricks-HAND.need,made=diff>=0,secs=Math.round(elapsed/1000);
   var pts=null,done=false;
   if(mode==='challenge'){
-    pts=scoreFor(made,-diff,attempt);
+    pts=scoreFor(made,-diff,attempt,diff);
     recordAttempt(HAND.id,{p:pts,t:secs,tr:tricks,made:made});
     save('inprog','');
     done=isDone(HAND.id);
@@ -712,19 +777,18 @@ function render(){
 }
 
 /* ---------- overlays / messages ---------- */
-function closeAll(){['ovSettings','ovInvite','ovResult','ovQuit','ovSet','ovHands','ovPay','ovIntro'].forEach(function(i){$(i).classList.remove('show');});el.menu.classList.remove('open');$('menuBtn').setAttribute('aria-expanded','false');}
+function closeAll(){['ovSettings','ovInvite','ovResult','ovQuit','ovSet','ovHands','ovPay','ovIntro','ovWhy','ovHome'].forEach(function(i){$(i).classList.remove('show');});el.menu.classList.remove('open');$('menuBtn').setAttribute('aria-expanded','false');}
 function baseUrl(){return location.href.split('#')[0].split('?')[0];}
 function linkBase(){return GATE_URL||baseUrl();}
-function setRange(){return SET_IDS[0]+' to '+SET_IDS[SET_IDS.length-1];}
 function buildInvite(name){
-  var link=linkBase()+'?set='+SET_IDS[0]+'&n='+encodeURIComponent(name||'A friend');
+  var sid=setStart(HAND.id),link=linkBase()+'?set='+sid+'&n='+encodeURIComponent(name||'A friend');
   return {subject:'Try the Declarer Challenge bridge hands',
     body:'I have been playing Declarer Challenge, a set of tricky bridge contracts to play as declarer. Try the same three hands and see how you get on:\n'+link+'\n\nIt works on a phone or tablet, even offline once it is installed.'};
 }
-function buildSetMessage(name){
-  var t=setTotals(),link=linkBase()+'?set='+SET_IDS[0]+'&n='+encodeURIComponent(name||'A friend')+'&s='+t.pts+'&t='+t.secs+'&p='+t.list.join('-');
+function buildSetMessage(name,sid){
+  var t=setTotals(sid),link=linkBase()+'?set='+sid+'&n='+encodeURIComponent(name||'A friend')+'&s='+t.pts+'&t='+t.secs+'&p='+t.list.join('-');
   return {subject:'Can you beat my Declarer Challenge score?',
-    body:(name?name:'I')+' scored '+t.pts+' out of '+(10*SET_IDS.length)+' on the Declarer Challenge (hands '+setRange()+') in '+fmtSec(t.secs)+'. Hand by hand: '+t.list.join(', ')+'.\n\nCan you beat it? Play the same three hands here:\n'+link+'\n\nMost points wins; time breaks a tie.'};
+    body:(name?name:'I')+' scored '+t.pts+' points on Declarer Challenge no. '+challengeNo(sid)+' (hands '+setRange(sid)+') in '+fmtSec(t.secs)+'. Hand by hand: '+t.list.join(', ')+'.\n\nCan you beat it? Play the same three hands here:\n'+link+'\n\nMost points wins; time breaks a tie.'};
 }
 function wireMail(nameInput,mailEl,copyEl,build,shareEl){
   var upd=function(){
@@ -757,7 +821,8 @@ function showInvite(){
   $('ovInvite').classList.add('show');
 }
 function afterHand(){
-  if(mode==='challenge'&&resultData&&resultData.done&&setComplete()&&load('setSeen','')!=='1'){ save('setSeen','1'); closeAll(); showSet(); return; }
+  var sid=setStart(HAND.id);
+  if(mode==='challenge'&&resultData&&resultData.done&&setPending(sid)){ save('setSeen'+sid,'1'); closeAll(); showSet(sid); return; }
   toReady();
 }
 function showResult(){
@@ -768,10 +833,11 @@ function showResult(){
     var b=bestOf(id),remain=MAX_ATT-attemptsUsed(id);
     left+='<div class="pts">'+r.pts+'<small>points</small></div>'+
       '<div class="kv"><div>Time<b>'+fmtSec(r.secs)+'</b></div><div>Attempt<b>'+r.att+' of '+MAX_ATT+'</b></div></div>';
+    if(r.made&&r.diff>0){ var bn=Math.min(r.diff,OVER_CAP)*OVER_BONUS; left+='<p>Includes '+bn+' bonus point'+(bn===1?'':'s')+' for '+r.diff+' overtrick'+(r.diff===1?'':'s')+'.</p>'; }
     if(r.done) left+='<p>Hand complete. Your score for this hand is <b>'+b.p+' points</b> in '+fmtSec(b.t)+'.</p>';
-    else left+='<p>You have '+remain+' attempt'+(remain===1?'':'s')+' left. Making it next time scores '+(r.att+1===2?6:3)+' points.</p>';
-    var label=!r.done?'Try again':(setComplete()&&load('setSeen','')!=='1'?'See your challenge score':'Next hand');
-    right+='<div class="acts"><button class="btn primary" id="againBtn">'+label+'</button>'+((r.done&&HAND.sol)?'<button class="btn" id="solBtn">Show me how it is done</button>':'')+'</div>';
+    else left+='<p>You have '+remain+' attempt'+(remain===1?'':'s')+' left. Making it next time scores '+(r.att+1===2?6:3)+' points, plus a bonus for any overtricks.</p>';
+    var label=!r.done?'Try again':(setPending(setStart(id))?'See your challenge score':'Next hand');
+    right+='<div class="acts"><button class="btn primary" id="againBtn">'+label+'</button>'+((r.done&&HAND.sol)?'<button class="btn" id="solBtn">Show me how it is done</button>':'')+((r.done&&HAND.pbp)?'<button class="btn" id="whyBtn">Read the explanation</button>':'')+'</div>';
   } else {
     left+='<p class="muted">Practice is not scored.</p>';
     right+='<div class="acts"><button class="btn primary" id="againBtn">Back to the challenge</button><button class="btn" id="practiceBtn">Practise again</button>'+((isDone(id)&&HAND.sol)?'<button class="btn" id="solBtn">Show me how it is done</button>':'')+'</div>';
@@ -781,15 +847,23 @@ function showResult(){
   $('againBtn').onclick=afterHand;
   if($('practiceBtn')) $('practiceBtn').onclick=function(){start('practice');};
   if($('solBtn')) $('solBtn').onclick=function(){ startDemo(id); };
+  if($('whyBtn')) $('whyBtn').onclick=function(){ showWhy(id); };
 }
-function showSet(){
-  var t=setTotals();
-  var rows=SET_IDS.map(function(id){var b=bestOf(id);return '<tr><td>'+id+'</td><td>'+(b?esc(resultText(id,b))+', attempt '+bestIndex(id):'not played')+'</td><td><b>'+(b?b.p:0)+'</b></td><td>'+(b?fmtSec(b.t):'')+'</td></tr>';}).join('');
-  var left='<h2>Your challenge score</h2><p class="muted">Hands '+setRange()+'</p><div class="pts">'+t.pts+'<small>out of '+(10*SET_IDS.length)+'</small></div>'+
+function showWhy(id){
+  var h=HANDS[id];
+  var why=(h.why&&h.why.length)?h.why.map(function(p){return '<p>'+esc(p)+'</p>';}).join(''):'<p class="muted">The written explanation for this hand will appear here. Test hands only have the trick-by-trick list below.</p>';
+  var pb=(h.pbp||[]).map(function(l){return '<li>'+esc(l)+'</li>';}).join('');
+  $('whyBody').innerHTML='<h2>Hand '+id+': '+contractHtml(h)+' by South</h2>'+why+'<h3>Trick by trick</h3><ol class="how">'+pb+'</ol>';
+  $('ovWhy').classList.add('show');
+}
+function showSet(sid){
+  var ids=setIdsOf(sid),t=setTotals(sid);
+  var rows=ids.map(function(id){var b=bestOf(id);return '<tr><td>'+id+'</td><td>'+(b?esc(resultText(id,b))+', attempt '+bestIndex(id):'not played')+'</td><td><b>'+(b?b.p:0)+'</b></td><td>'+(b?fmtSec(b.t):'')+'</td></tr>';}).join('');
+  var left='<h2>Your score: challenge '+challengeNo(sid)+'</h2><p class="muted">Hands '+setRange(sid)+'</p><div class="pts">'+t.pts+'<small>points</small></div>'+
     '<div class="kv"><div>Total time<b>'+fmtSec(t.secs)+'</b></div></div>'+
     '<table class="tbl"><thead><tr><th>Hand</th><th>Result</th><th>Pts</th><th>Time</th></tr></thead><tbody>'+rows+'</tbody></table>';
   var right='';
-  if(incoming&&incoming.s!==null){
+  if(incoming&&incoming.set===sid&&incoming.s!==null){
     var beat=t.pts>incoming.s||(t.pts===incoming.s&&t.secs<incoming.t),tie=t.pts===incoming.s&&t.secs===incoming.t;
     right+='<div class="cmp">'+(tie?'You matched '+esc(incoming.n)+' exactly.':beat?'You beat '+esc(incoming.n)+'! ('+esc(incoming.n)+' scored '+incoming.s+' in '+fmtSec(incoming.t)+')':esc(incoming.n)+' still leads with '+incoming.s+' points in '+fmtSec(incoming.t)+'.')+'</div>';
   }
@@ -799,23 +873,25 @@ function showSet(){
     '<div class="acts"><button class="btn" id="setMore">Play more hands</button><button class="btn" data-close="ovSet">Close</button></div>';
   $('setPanel').innerHTML='<div class="res"><div>'+left+'</div><div>'+right+'</div></div>';
   $('ovSet').classList.add('show');
-  wireMail($('setName'),$('setMail'),$('setCopy'),buildSetMessage,$('setShare'));
-  $('setMore').onclick=toReady;
-  $('setPanel').querySelector('[data-close]').onclick=function(){ $('ovSet').classList.remove('show'); };
+  wireMail($('setName'),$('setMail'),$('setCopy'),function(nm){return buildSetMessage(nm,sid);},$('setShare'));
+  $('setMore').onclick=goHome;
+  $('setPanel').querySelector('[data-close]').onclick=goHome;
 }
 function showHands(note){
-  var lic=licStatus(),rows='';
-  for(var id=SET_IDS[0];id<=LAST_ID;id++){
+  var lic=licStatus(),rows='',cur=null;
+  for(var id=FIRST_ID;id<=LAST_ID;id++){
+    var sid=setStart(id);
+    if(sid!==cur){ cur=sid; rows+='<tr><td colspan="3"><b>Challenge '+challengeNo(sid)+'</b> <span class="muted">(hands '+setRange(sid)+')</span></td><td>'+(setComplete(sid)?'<button class="btn" data-act="set" data-sid="'+sid+'">Score</button>':'')+'</td></tr>'; }
     var h=HANDS[id],used=attemptsUsed(id),b=bestOf(id),status,btn;
     if(!canPlay(id)){ status='Locked'; btn='<button class="btn" data-act="unlock">Unlock</button>'; }
     else if(isDone(id)){ status='Done: '+b.p+' pts, '+fmtSec(b.t); btn='<button class="btn" data-act="practise" data-id="'+id+'">Practise</button>'+(h.sol?' <button class="btn" data-act="solution" data-id="'+id+'">Solution</button>':''); }
     else { status=used?('Attempt '+used+' of '+MAX_ATT+' used'):'Not played'; btn='<button class="btn primary" data-act="play" data-id="'+id+'">Play</button>'; }
-    rows+='<tr><td>'+id+(SET_IDS.indexOf(id)>=0?'':'<br><span class="muted" style="font-size:11px">bonus</span>')+'</td><td>'+contractHtml(h)+'</td><td>'+status+'</td><td>'+btn+'</td></tr>';
+    rows+='<tr><td>'+id+'</td><td>'+contractHtml(h)+'</td><td>'+status+'</td><td>'+btn+'</td></tr>';
   }
-  var licLine=lic.ok?('Unlocked ('+lic.kind+(lic.daysLeft?', '+lic.daysLeft+' days left':'')+').'):('Hands '+SET_IDS[0]+' to '+FREE_MAX+' are free. Later hands need an unlock code.');
+  var licLine=lic.ok?('Unlocked ('+lic.kind+(lic.daysLeft?', '+lic.daysLeft+' days left':'')+').'):('Hands '+FIRST_ID+' to '+FREE_MAX+' are free. Later hands need an unlock code.');
   $('handsBody').innerHTML=(note?'<p><b>'+esc(note)+'</b></p>':'')+'<p class="muted">'+licLine+'</p>'+
     '<table class="tbl"><thead><tr><th>Hand</th><th>Contract</th><th>Status</th><th></th></tr></thead><tbody>'+rows+'</tbody></table>'+
-    '<div class="acts">'+(setComplete()?'<button class="btn" data-act="set">My challenge score</button>':'')+'<button class="btn primary" data-close="ovHands">Close</button></div>';
+    '<div class="acts"><button class="btn primary" data-close="ovHands">Close</button></div>';
   $('handsBody').querySelector('[data-close]').onclick=function(){ $('ovHands').classList.remove('show'); };
   el.menu.classList.remove('open');
   $('ovHands').classList.add('show');
@@ -827,8 +903,8 @@ function showIntro(){
     '<li><b>Study the auction</b> in the top right. It tells you where the missing high cards are likely to be.</li>'+
     '<li>'+play+'</li>'+
     '<li><b>There is no undo in the challenge,</b> so think before you play.</li>'+
-    '<li><b>Three attempts per hand.</b> Made first time scores 10, second time 6, third time 3. If you fail, down 1 scores 5, down 2 scores 3 and down 3 scores 1. The clock only breaks ties.</li>'+
-    '<li><b>Hands '+setRange()+' are your challenge.</b> When you finish them you can send your score to a friend to beat.</li>'+
+    '<li><b>Three attempts per hand.</b> Made first time scores 10, second time 6, third time 3. If you fail, down 1 scores 5, down 2 scores 3 and down 3 scores 1. Each overtrick, up to two, adds a point. The clock only breaks ties.</li>'+
+    '<li><b>Every three hands make a challenge.</b> Finish one and you can send your score to a friend to beat. Hands '+FIRST_ID+' to '+FREE_MAX+' are free; after that you unlock more.</li>'+
     '<li>When a hand is finished, <b>Show me how it is done</b> replays the winning line.</li></ol>';
   el.menu.classList.remove('open');
   $('ovIntro').classList.add('show');
@@ -852,6 +928,7 @@ $('mUndo').onclick=function(){el.menu.classList.remove('open');undo();};
 $('mInvite').onclick=showInvite;
 $('mSettings').onclick=function(){ $('optConfirm').checked=confirmTap; $('optBig').checked=bigCards; el.menu.classList.remove('open'); $('ovSettings').classList.add('show'); };
 $('mRestart').onclick=leaveHand;
+$('mHome').onclick=goHome;
 $('mHands').onclick=function(){ showHands(); };
 $('mHelp').onclick=showIntro;
 $('introGo').onclick=function(){ save('intro','1'); $('ovIntro').classList.remove('show'); };
@@ -865,7 +942,14 @@ $('quitRestart').onclick=leaveHand;
 $('quitExit').onclick=function(){ abandonIfNeeded(); try{window.close();}catch(e){} setTimeout(function(){ location.href='https://bridgescorer.com/'; },300); };
 document.addEventListener('click',function(e){ if(el.menu.classList.contains('open')&&!e.target.closest('#menu')&&!e.target.closest('#menuBtn')){ el.menu.classList.remove('open'); $('menuBtn').setAttribute('aria-expanded','false'); } });
 $('menuBtn').onclick=function(){ var o=el.menu.classList.toggle('open'); this.setAttribute('aria-expanded',o?'true':'false'); };
-$('btnReset').onclick=function(){ ['res','setSeen','inprog','bestPts','bestTime','attempts'].forEach(function(k){try{localStorage.removeItem('dcp:'+k);}catch(e){}}); RES={}; readyHand(nextHandId()); $('ovSettings').classList.add('show'); this.textContent='Scores reset'; };
+$('btnReset').onclick=function(){
+  try{
+    var keys=[];
+    for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);if(k&&(k.indexOf('dcp:setSeen')===0||['dcp:res','dcp:inprog','dcp:inc','dcp:bestPts','dcp:bestTime','dcp:attempts'].indexOf(k)>=0)) keys.push(k);}
+    keys.forEach(function(k){localStorage.removeItem(k);});
+  }catch(e){}
+  RES={}; incoming=null; readyHand(nextHandId()); $('ovSettings').classList.add('show'); this.textContent='Scores reset';
+};
 $('btnRefresh').onclick=function(){
   var go=function(){ location.reload(); };
   try{
@@ -887,7 +971,7 @@ $('handsBody').onclick=function(e){
   else if(act==='practise'){ closeAll(); loadHand(id); start('practice'); }
   else if(act==='solution'){ closeAll(); startDemo(id); }
   else if(act==='unlock') showPay();
-  else if(act==='set'){ closeAll(); showSet(); }
+  else if(act==='set'){ closeAll(); showSet(+b.getAttribute('data-sid')); }
 };
 $('payGo').onclick=function(){
   if(tryUnlock($('payCode').value)){ $('payMsg').textContent='Unlocked. Thank you!'; setTimeout(function(){ $('ovPay').classList.remove('show'); toReady(); },900); }
@@ -898,6 +982,8 @@ $('optConfirm').onchange=function(){ confirmTap=this.checked; save('confirm',con
 Array.prototype.forEach.call(document.querySelectorAll('[data-close]'),function(b){
   b.onclick=function(){ $(b.getAttribute('data-close')).classList.remove('show'); };
 });
+window.addEventListener('online',function(){ if($('ovHome').classList.contains('show')) refreshHomeConn(); });
+window.addEventListener('offline',function(){ if($('ovHome').classList.contains('show')) refreshHomeConn(); });
 window.addEventListener('resize',function(){ layout(); render(); });
 var rq=0;
 try{ new ResizeObserver(function(){ if(rq) return; rq=requestAnimationFrame(function(){ rq=0; layout(); render(); }); }).observe(el.felt); }catch(e){}
@@ -909,13 +995,13 @@ window.addEventListener('orientationchange',function(){ setTimeout(function(){ l
   if(ip){ var pid=+ip; if(HANDS[pid]&&!isDone(pid)) recordAttempt(pid,{p:0,t:0,tr:0,made:false,q:1}); save('inprog',''); }
   $('buildLine').textContent='Version '+BUILD;
   $('payAnnual').href=LICENSE.annualUrl; $('payLife').href=LICENSE.lifeUrl;
+  try{ var stc=JSON.parse(load('inc','null')); if(stc&&stc.set&&HANDS[stc.set]) incoming=stc; }catch(e){}
   try{
-    var q=new URLSearchParams(location.search);
-    if(q.get('set')===String(SET_IDS[0])){
+    var q=new URLSearchParams(location.search),sv=+q.get('set');
+    if(q.get('set')&&HANDS[sv]&&sv===setStart(sv)){
       var n=(q.get('n')||'A friend').slice(0,24),hasScore=q.get('s')!==null&&q.get('t')!==null&&isFinite(+q.get('s'))&&isFinite(+q.get('t'));
-      incoming={n:n,s:hasScore?+q.get('s'):null,t:hasScore?+q.get('t'):null};
-      var box=$('incoming'); box.hidden=false;
-      box.textContent=hasScore?(n+' scored '+incoming.s+' out of '+(10*SET_IDS.length)+' in '+fmtSec(incoming.t)+'. Can you beat it?'):(n+' invites you to try these three hands.');
+      incoming={set:sv,n:n,s:hasScore?+q.get('s'):null,t:hasScore?+q.get('t'):null};
+      save('inc',JSON.stringify(incoming));
     }
   }catch(e){}
   var id=nextHandId();
@@ -924,6 +1010,7 @@ window.addEventListener('orientationchange',function(){ setTimeout(function(){ l
   if(id===null) showHands('You have played every hand available for now. New hands will be added.');
   else if(!canPlay(id)) showPay();
   else if(load('intro','')!=='1') showIntro();
+  else showHome();
   requestAnimationFrame(function(){ layout(); render(); });
 })();
 })();
