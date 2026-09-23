@@ -367,7 +367,7 @@ var NAMES={N:'North',E:'East',S:'South',W:'West'};
 var RNAME={11:'J',12:'Q',13:'K',14:'A'};
 
 /* Game rules */
-var BUILD='2026-09-23 e';       // shown in Settings so you can tell which version a phone is running
+var BUILD='2026-09-23 f';       // shown in Settings so you can tell which version a phone is running
 var GATE_URL='';               // NOT YET LIVE: once the bridgescorer.com sign-up gate page exists, set its URL here and challenge links will route through it first, instead of straight into the app as they do now.
 var RESULTS_URL='https://script.google.com/macros/s/AKfycbzQ3emQW0yoTcjrUt6OaGjP9EeiUFtx-AoohDgiu1wkqCNwYdeenqMKbPPNAUkHJd-Z9Q/exec'; // LIVE
 var MAX_ATT=3;
@@ -586,21 +586,29 @@ function queueSubmit(id){
   if(q.indexOf(id)===-1) q.push(id);
   save('submitQueue', JSON.stringify(q));
 }
-function submitResult(id){
-  var p=getPlayer(); if(!p){ return; }
-  var b=bestOf(id); if(!b) return;
-  if(!serverReady()){ queueSubmit(id); return; }
+function submitResult(id,cb){
+  var p=getPlayer(); if(!p){ if(cb) cb(); return; }
+  var b=bestOf(id); if(!b){ if(cb) cb(); return; }
+  if(!serverReady()){ queueSubmit(id); if(cb) cb(); return; }
   var url=RESULTS_URL+'?action=dcSubmit&email='+encodeURIComponent(p.email)+'&name='+encodeURIComponent(p.name)+
     '&hand='+id+'&points='+b.p+'&secs='+b.t+'&tricks='+b.tr+'&made='+(b.made?1:0)+'&attempt='+bestIndex(id);
   fetch(url).then(function(r){ if(!r.ok) throw 0; return r.json(); }).then(function(){
     var q=[]; try{ q=JSON.parse(load('submitQueue','[]'))||[]; }catch(e){}
     q=q.filter(function(x){return x!==id;}); save('submitQueue', JSON.stringify(q));
-  }).catch(function(){ queueSubmit(id); });
+  }).catch(function(){ queueSubmit(id); }).then(function(){ if(cb) cb(); });
 }
-function flushQueue(){
-  if(!serverReady()) return;
+function submitSequential(ids,cb){
+  ids=ids.slice();
+  function next(){
+    if(!ids.length){ if(cb) cb(); return; }
+    submitResult(ids.shift(), next);
+  }
+  next();
+}
+function flushQueue(cb){
+  if(!serverReady()){ if(cb) cb(); return; }
   var q=[]; try{ q=JSON.parse(load('submitQueue','[]'))||[]; }catch(e){}
-  q.forEach(function(id){ submitResult(id); });
+  submitSequential(q, cb);
 }
 function syncPlayer(cb){
   var p=getPlayer(); if(!p||!serverReady()){ if(cb) cb(false); return; }
@@ -734,7 +742,7 @@ function showRegisterForm(after){
     var nm=$('regName').value.trim(), em=$('regEmail').value.trim();
     if(!nm||!em||em.indexOf('@')<0){ $('regMsg').textContent='Please enter your name and a valid email.'; return; }
     save('name',nm); savePlayer(nm,em); save('regSkipped','');
-    Object.keys(RES).filter(isDone).forEach(function(id){ submitResult(id); });
+    submitSequential(Object.keys(RES).filter(isDone));
     $('ovRegister').classList.remove('show');
     syncPlayer(function(){ if(after) after(); else render(); });
   };
