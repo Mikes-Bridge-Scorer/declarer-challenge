@@ -367,7 +367,7 @@ var NAMES={N:'North',E:'East',S:'South',W:'West'};
 var RNAME={11:'J',12:'Q',13:'K',14:'A'};
 
 /* Game rules */
-var BUILD='2026-09-23 d';       // shown in Settings so you can tell which version a phone is running
+var BUILD='2026-09-23 e';       // shown in Settings so you can tell which version a phone is running
 var GATE_URL='';               // NOT YET LIVE: once the bridgescorer.com sign-up gate page exists, set its URL here and challenge links will route through it first, instead of straight into the app as they do now.
 var RESULTS_URL='https://script.google.com/macros/s/AKfycbzQ3emQW0yoTcjrUt6OaGjP9EeiUFtx-AoohDgiu1wkqCNwYdeenqMKbPPNAUkHJd-Z9Q/exec'; // LIVE
 var MAX_ATT=3;
@@ -1028,12 +1028,13 @@ $('mid').addEventListener('click',function(){ if(pending) pending.fn(); });
 $('startChallenge').onclick=function(){start('challenge');};
 $('mUndo').onclick=function(){el.menu.classList.remove('open');undo();};
 $('mInvite').onclick=showInvite;
-$('mSettings').onclick=function(){
+function openSettings(){
   $('optConfirm').checked=confirmTap; $('optBig').checked=bigCards;
   var p=getPlayer();
   $('playerLine').textContent=p?('Saving scores as '+p.name+' ('+p.email+').'):'Not saving scores yet -- your progress only lives on this phone.';
   el.menu.classList.remove('open'); $('ovSettings').classList.add('show');
-};
+}
+$('mSettings').onclick=openSettings;
 $('btnRegister').onclick=function(){
   $('ovSettings').classList.remove('show');
   showRegisterForm(function(){ $('mSettings').click(); });
@@ -1060,7 +1061,7 @@ $('btnReset').onclick=function(){
     for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);if(k&&(k.indexOf('dcp:setSeen')===0||['dcp:res','dcp:inprog','dcp:inc','dcp:bestPts','dcp:bestTime','dcp:attempts'].indexOf(k)>=0)) keys.push(k);}
     keys.forEach(function(k){localStorage.removeItem(k);});
   }catch(e){}
-  RES={}; incoming=null; readyHand(nextHandId()); $('ovSettings').classList.add('show'); this.textContent='Scores reset';
+  RES={}; incoming=null; readyHand(nextHandId()); openSettings(); this.textContent='Scores reset';
 };
 $('btnRefresh').onclick=function(){
   var go=function(){ location.reload(); };
