@@ -279,6 +279,8 @@ input[type=text]{font:inherit;font-size:16px;width:100%;min-height:40px;border-r
     <h2>Settings</h2>
     <label class="tog"><span>Tap a card twice to play it<br><span class="muted" style="font-size:12px">First tap lifts the card, second tap plays it. Handy on a phone; off by default on a PC.</span></span><input type="checkbox" id="optConfirm"></label>
     <label class="tog"><span>Larger cards<br><span class="muted" style="font-size:12px">Bigger hands and a smaller middle. Try this if the cards are hard to read.</span></span><input type="checkbox" id="optBig"></label>
+    <p class="muted" style="font-size:13px;margin-top:10px" id="playerLine"></p>
+    <div class="acts"><button class="btn" id="btnRegister">Save my score / edit details</button></div>
     <p class="muted" style="font-size:12px;margin-top:10px" id="buildLine"></p>
     <div class="acts"><button class="btn" id="btnRefresh">Get latest version</button><button class="btn" id="btnReset">Reset my scores</button><button class="btn" id="btnResetLic">Remove unlock code</button><button class="btn primary" data-close="ovSettings">Close</button></div>
   </div></div>
@@ -365,7 +367,7 @@ var NAMES={N:'North',E:'East',S:'South',W:'West'};
 var RNAME={11:'J',12:'Q',13:'K',14:'A'};
 
 /* Game rules */
-var BUILD='2026-09-23 b';       // shown in Settings so you can tell which version a phone is running
+var BUILD='2026-09-23 d';       // shown in Settings so you can tell which version a phone is running
 var GATE_URL='';               // NOT YET LIVE: once the bridgescorer.com sign-up gate page exists, set its URL here and challenge links will route through it first, instead of straight into the app as they do now.
 var RESULTS_URL='https://script.google.com/macros/s/AKfycbzQ3emQW0yoTcjrUt6OaGjP9EeiUFtx-AoohDgiu1wkqCNwYdeenqMKbPPNAUkHJd-Z9Q/exec'; // LIVE
 var MAX_ATT=3;
@@ -724,20 +726,24 @@ function abandonIfNeeded(){
   }
 }
 function leaveHand(){ abandonIfNeeded(); toReady(); }
-function offerRegistration(after){
-  if(getPlayer()){ if(after) after(); return; }
-  if(load('regSkipped','')==='1'){ if(after) after(); return; }
-  $('regMsg').textContent=''; $('regName').value=load('name',''); $('regEmail').value='';
+function showRegisterForm(after){
+  var p=getPlayer();
+  $('regMsg').textContent=''; $('regName').value=p?p.name:load('name',''); $('regEmail').value=p?p.email:'';
   $('ovRegister').classList.add('show');
   $('regSave').onclick=function(){
     var nm=$('regName').value.trim(), em=$('regEmail').value.trim();
     if(!nm||!em||em.indexOf('@')<0){ $('regMsg').textContent='Please enter your name and a valid email.'; return; }
-    save('name',nm); savePlayer(nm,em);
+    save('name',nm); savePlayer(nm,em); save('regSkipped','');
     Object.keys(RES).filter(isDone).forEach(function(id){ submitResult(id); });
     $('ovRegister').classList.remove('show');
     syncPlayer(function(){ if(after) after(); else render(); });
   };
   $('regSkip').onclick=function(){ save('regSkipped','1'); $('ovRegister').classList.remove('show'); if(after) after(); };
+}
+function offerRegistration(after){
+  if(getPlayer()){ if(after) after(); return; }
+  if(load('regSkipped','')==='1'){ if(after) after(); return; }
+  showRegisterForm(after);
 }
 function scoreFor(made,under,att,over){
   if(made) return (att===1?10:att===2?6:3)+Math.min(over||0,OVER_CAP)*OVER_BONUS;
@@ -1022,7 +1028,16 @@ $('mid').addEventListener('click',function(){ if(pending) pending.fn(); });
 $('startChallenge').onclick=function(){start('challenge');};
 $('mUndo').onclick=function(){el.menu.classList.remove('open');undo();};
 $('mInvite').onclick=showInvite;
-$('mSettings').onclick=function(){ $('optConfirm').checked=confirmTap; $('optBig').checked=bigCards; el.menu.classList.remove('open'); $('ovSettings').classList.add('show'); };
+$('mSettings').onclick=function(){
+  $('optConfirm').checked=confirmTap; $('optBig').checked=bigCards;
+  var p=getPlayer();
+  $('playerLine').textContent=p?('Saving scores as '+p.name+' ('+p.email+').'):'Not saving scores yet -- your progress only lives on this phone.';
+  el.menu.classList.remove('open'); $('ovSettings').classList.add('show');
+};
+$('btnRegister').onclick=function(){
+  $('ovSettings').classList.remove('show');
+  showRegisterForm(function(){ $('mSettings').click(); });
+};
 $('mRestart').onclick=leaveHand;
 $('mHome').onclick=goHome;
 $('mHands').onclick=function(){ showHands(); };
