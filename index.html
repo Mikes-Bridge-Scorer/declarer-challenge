@@ -299,6 +299,17 @@ input[type=text]{font:inherit;font-size:16px;width:100%;min-height:40px;border-r
 
   <div class="ov" id="ovHome"><div class="panel" id="homeBody"></div></div>
 
+  <div class="ov" id="ovRegister"><div class="panel">
+    <h2>Save your score</h2>
+    <p>Enter your name and email once to keep your scores safe across phones, and to make sure a challenge you\'ve already played can\'t be replayed for a better score.</p>
+    <label class="f" for="regName">Your name</label>
+    <input type="text" id="regName" maxlength="24" autocomplete="off">
+    <label class="f" for="regEmail">Your email</label>
+    <input type="text" id="regEmail" maxlength="60" autocomplete="off" inputmode="email">
+    <p id="regMsg" class="muted" style="font-size:13px;min-height:1.3em"></p>
+    <div class="acts"><button class="btn primary" id="regSave">Save</button><button class="btn" id="regSkip">Not now</button></div>
+  </div></div>
+
   <div class="ov" id="ovReport"><div class="panel">
     <h2>Report a defence issue</h2>
     <p>If the computer defenders played in a way that let you succeed despite a genuine mistake, or played oddly, let us know which hand and what happened -- it helps improve the hands.</p>
@@ -354,8 +365,9 @@ var NAMES={N:'North',E:'East',S:'South',W:'West'};
 var RNAME={11:'J',12:'Q',13:'K',14:'A'};
 
 /* Game rules */
-var BUILD='2026-09-22 h';       // shown in Settings so you can tell which version a phone is running
+var BUILD='2026-09-23 a';       // shown in Settings so you can tell which version a phone is running
 var GATE_URL='';               // NOT YET LIVE: once the bridgescorer.com sign-up gate page exists, set its URL here and challenge links will route through it first, instead of straight into the app as they do now.
+var RESULTS_URL='';            // NOT YET LIVE: once the Apps Script 'dcSubmit'/'dcSync' actions are deployed, set the Apps Script web app URL here to turn on real syncing.
 var MAX_ATT=3;
 var OVER_BONUS=1, OVER_CAP=2;  // each overtrick adds this many points, up to this many overtricks per hand                 // attempts allowed per hand
 var SET_SIZE=3, FIRST_ID=100;  // every three hands make one challenge (100-102, 103-105, 106-108, ...)
@@ -562,6 +574,48 @@ function contractText(h){h=h||HAND;return h.level+SYM[h.trump];}
 function contractHtml(h){h=h||HAND;return h.level+suitHtml(h.trump);}
 function resultText(id,att){var h=HANDS[id],diff=att.tr-h.need;return diff>=0?contractText(h)+' made'+(diff?' +'+diff:''):contractText(h)+' down '+(-diff);}
 
+/* ---------- player identity, result submission and cross-device sync ---------- */
+function getPlayer(){ try{ return JSON.parse(load('player','null')); }catch(e){ return null; } }
+function savePlayer(name,email){ save('player', JSON.stringify({name:name, email:email.toLowerCase()})); }
+function serverReady(){ return !!RESULTS_URL && navigator.onLine; }
+
+function queueSubmit(id){
+  var q=[]; try{ q=JSON.parse(load('submitQueue','[]'))||[]; }catch(e){}
+  if(q.indexOf(id)===-1) q.push(id);
+  save('submitQueue', JSON.stringify(q));
+}
+function submitResult(id){
+  var p=getPlayer(); if(!p){ return; }
+  var b=bestOf(id); if(!b) return;
+  if(!serverReady()){ queueSubmit(id); return; }
+  var url=RESULTS_URL+'?action=dcSubmit&email='+encodeURIComponent(p.email)+'&name='+encodeURIComponent(p.name)+
+    '&hand='+id+'&points='+b.p+'&secs='+b.t+'&tricks='+b.tr+'&made='+(b.made?1:0)+'&attempt='+bestIndex(id);
+  fetch(url).then(function(r){ if(!r.ok) throw 0; return r.json(); }).then(function(){
+    var q=[]; try{ q=JSON.parse(load('submitQueue','[]'))||[]; }catch(e){}
+    q=q.filter(function(x){return x!==id;}); save('submitQueue', JSON.stringify(q));
+  }).catch(function(){ queueSubmit(id); });
+}
+function flushQueue(){
+  if(!serverReady()) return;
+  var q=[]; try{ q=JSON.parse(load('submitQueue','[]'))||[]; }catch(e){}
+  q.forEach(function(id){ submitResult(id); });
+}
+function syncPlayer(cb){
+  var p=getPlayer(); if(!p||!serverReady()){ if(cb) cb(false); return; }
+  var url=RESULTS_URL+'?action=dcSync&email='+encodeURIComponent(p.email);
+  fetch(url).then(function(r){ return r.json(); }).then(function(data){
+    if(data&&data.results){
+      Object.keys(data.results).forEach(function(id){
+        var r=data.results[id];
+        RES[id]={a:[{p:r.points,t:r.secs,tr:r.tricks,made:!!r.made}], done:true, synced:true};
+      });
+      saveRes();
+    }
+    if(cb) cb(true);
+  }).catch(function(){ if(cb) cb(false); });
+}
+function pendingSubmitCount(){ try{ return (JSON.parse(load('submitQueue','[]'))||[]).length; }catch(e){ return 0; } }
+
 /* ---------- how it is done (replay of the winning line) ---------- */
 function scheduleDemo(){
   var tok=token;
@@ -632,12 +686,14 @@ function goHome(){
   showHome();
 }
 function refreshHomeConn(){
-  var on=navigator.onLine;
+  var on=navigator.onLine, p=getPlayer(), pend=pendingSubmitCount();
   var pill=$('homePill'); if(pill) pill.innerHTML='<span class="pill '+(on?'on':'off')+'">'+(on?'Online':'Offline')+'</span>';
   var note=$('homeConnNote');
-  if(note) note.textContent=on
-    ?'Not switched on yet. Coming soon.'
-    :'You are offline. Scores are saved on this phone and will be ready to send once this feature is live.';
+  if(!note) return;
+  if(!RESULTS_URL){ note.textContent='Not switched on yet. Coming soon.'; return; }
+  if(!p){ note.textContent='Finish a challenge to save your scores online.'; return; }
+  if(!on){ note.textContent='You are offline. '+(pend?pend+' result'+(pend===1?'':'s')+' saved on this phone, ready to send.':'Everything is up to date on this phone.'); return; }
+  note.textContent=pend?('Sending '+pend+' saved result'+(pend===1?'':'s')+'...'):'Up to date as '+p.name+'.';
 }
 function showHome(){
   var id=nextHandId();
@@ -668,6 +724,21 @@ function abandonIfNeeded(){
   }
 }
 function leaveHand(){ abandonIfNeeded(); toReady(); }
+function offerRegistration(after){
+  if(getPlayer()){ if(after) after(); return; }
+  if(load('regSkipped','')==='1'){ if(after) after(); return; }
+  $('regMsg').textContent=''; $('regName').value=load('name',''); $('regEmail').value='';
+  $('ovRegister').classList.add('show');
+  $('regSave').onclick=function(){
+    var nm=$('regName').value.trim(), em=$('regEmail').value.trim();
+    if(!nm||!em||em.indexOf('@')<0){ $('regMsg').textContent='Please enter your name and a valid email.'; return; }
+    save('name',nm); savePlayer(nm,em);
+    Object.keys(RES).filter(isDone).forEach(function(id){ submitResult(id); });
+    $('ovRegister').classList.remove('show');
+    syncPlayer(function(){ if(after) after(); else render(); });
+  };
+  $('regSkip').onclick=function(){ save('regSkipped','1'); $('ovRegister').classList.remove('show'); if(after) after(); };
+}
 function scoreFor(made,under,att,over){
   if(made) return (att===1?10:att===2?6:3)+Math.min(over||0,OVER_CAP)*OVER_BONUS;
   return under===1?5:under===2?3:under===3?1:0;
@@ -682,6 +753,7 @@ function finish(){
     recordAttempt(HAND.id,{p:pts,t:secs,tr:tricks,made:made});
     save('inprog','');
     done=isDone(HAND.id);
+    if(done) submitResult(HAND.id);
   }
   resultData={tricks:tricks,diff:diff,made:made,secs:secs,pts:pts,done:done,att:attempt};
   var tok=token; setTimeout(function(){ if(tok===token) showResult(); },800);
@@ -795,7 +867,7 @@ function render(){
 }
 
 /* ---------- overlays / messages ---------- */
-function closeAll(){['ovSettings','ovInvite','ovResult','ovQuit','ovSet','ovHands','ovPay','ovIntro','ovWhy','ovHome','ovReport'].forEach(function(i){$(i).classList.remove('show');});el.menu.classList.remove('open');$('menuBtn').setAttribute('aria-expanded','false');}
+function closeAll(){['ovSettings','ovInvite','ovResult','ovQuit','ovSet','ovHands','ovPay','ovIntro','ovWhy','ovHome','ovReport','ovRegister'].forEach(function(i){$(i).classList.remove('show');});el.menu.classList.remove('open');$('menuBtn').setAttribute('aria-expanded','false');}
 function baseUrl(){return location.href.split('#')[0].split('?')[0];}
 function linkBase(){return GATE_URL||baseUrl();}
 function buildInvite(name){
@@ -840,7 +912,11 @@ function showInvite(){
 }
 function afterHand(){
   var sid=setStart(HAND.id);
-  if(mode==='challenge'&&resultData&&resultData.done&&setPending(sid)){ save('setSeen'+sid,'1'); closeAll(); showSet(sid); return; }
+  if(mode==='challenge'&&resultData&&resultData.done&&setPending(sid)){
+    save('setSeen'+sid,'1'); closeAll();
+    offerRegistration(function(){ showSet(sid); });
+    return;
+  }
   toReady();
 }
 function showResult(){
@@ -1032,6 +1108,7 @@ window.addEventListener('orientationchange',function(){ setTimeout(function(){ l
   else if(!canPlay(id)) showPay();
   else if(load('intro','')!=='1') showIntro();
   else showHome();
+  if(getPlayer()){ syncPlayer(function(){ flushQueue(); }); }
   requestAnimationFrame(function(){ layout(); render(); });
 })();
 })();
