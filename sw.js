@@ -1,7 +1,9 @@
 /* Declarer Challenge service worker. Relative paths, so it works in any folder.
-   Shows the saved copy straight away (fast, works offline, good on slow ship wifi) and refreshes it
-   in the background; the app then offers a "New version ready" button. */
-var CACHE='declarer-challenge-v3';
+   The app shell (index.html / '/') is always fetched fresh from the network first, falling back
+   to the cached copy only when offline — so a new build shows up the very next time the app is
+   opened, instead of one launch late. Icons/manifest rarely change, so those stay cache-first
+   for speed, refreshed quietly in the background. */
+var CACHE='declarer-challenge-v4';
 var FILES=['./','./index.html','./manifest.webmanifest','./icon-192.png','./icon-512.png','./icon-maskable-512.png'];
 self.addEventListener('install',function(e){
   e.waitUntil(caches.open(CACHE).then(function(c){
@@ -18,6 +20,22 @@ self.addEventListener('fetch',function(e){
   var u=new URL(req.url);
   if(u.origin!==location.origin) return;
   var key=new Request(u.origin+u.pathname);   /* ignore ?set=..&n=..&s=..&t=.. so challenge links open offline */
+  var isShell = req.mode==='navigate' || u.pathname==='/' || /\/$/.test(u.pathname) || /index\.html$/.test(u.pathname);
+
+  if(isShell){
+    /* network-first: always try to get the latest build; only use the cache when offline */
+    e.respondWith(
+      fetch(key.url,{cache:'no-cache'}).then(function(res){
+        if(res&&res.ok){ var copy=res.clone(); caches.open(CACHE).then(function(c){c.put(key,copy);}); }
+        return res;
+      }).catch(function(){
+        return caches.match(key).then(function(hit){ return hit||caches.match('./index.html'); });
+      })
+    );
+    return;
+  }
+
+  /* static assets: cache-first, refreshed in the background for next time */
   e.respondWith(caches.match(key).then(function(hit){
     var net=fetch(key.url,{cache:'no-cache'}).then(function(res){
       if(res&&res.ok){ var copy=res.clone(); caches.open(CACHE).then(function(c){c.put(key,copy);}); }

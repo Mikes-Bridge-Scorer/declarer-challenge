@@ -4,13 +4,6 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0b3a2a">
-<link rel="manifest" href="manifest.webmanifest">
-<link rel="icon" type="image/png" href="icon-192.png">
-<link rel="apple-touch-icon" href="icon-192.png">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="Declarer Challenge">
-
 <title>Declarer Challenge</title>
 <style>
 :root{
@@ -284,6 +277,8 @@ input[type=text]{font:inherit;font-size:16px;width:100%;min-height:40px;border-r
     <div class="acts"><button class="btn" id="btnRegister">Save my score / edit details</button></div>
     <p class="muted" style="font-size:12px;margin-top:10px" id="buildLine"></p>
     <div class="acts"><button class="btn" id="btnRefresh">Get latest version</button><button class="btn" id="btnReset">Reset my scores</button><button class="btn" id="btnResetLic">Remove unlock code</button><button class="btn primary" data-close="ovSettings">Close</button></div>
+    <div class="acts"><button class="btn" id="btnDiag">Copy diagnostics</button></div>
+    <p class="muted" style="font-size:11px;margin-top:6px" id="diagLine"></p>
   </div></div>
 
   <div class="ov" id="ovInvite"><div class="panel">
@@ -382,7 +377,7 @@ var NAMES={N:'North',E:'East',S:'South',W:'West'};
 var RNAME={11:'J',12:'Q',13:'K',14:'A'};
 
 /* Game rules */
-var BUILD='2026-09-25 a';       // shown in Settings so you can tell which version a phone is running
+var BUILD='2026-09-25 b';       // shown in Settings so you can tell which version a phone is running
 var GATE_URL='';               // NOT YET LIVE: once the bridgescorer.com sign-up gate page exists, set its URL here and challenge links will route through it first, instead of straight into the app as they do now.
 var RESULTS_URL='https://script.google.com/macros/s/AKfycbzQ3emQW0yoTcjrUt6OaGjP9EeiUFtx-AoohDgiu1wkqCNwYdeenqMKbPPNAUkHJd-Z9Q/exec'; // LIVE
 var MAX_ATT=3;
@@ -418,6 +413,50 @@ var bigH=110, smallH=64, th=60, tw=42, PAD=24;
 var bigCards = load('big',touch?'1':'0')==='1';
 
 var $=function(id){return document.getElementById(id);};
+
+/* ---- field diagnostics: small ring buffer, no network, so a stuck-Start report can be
+   copy/pasted back to us instead of guessed at. Never throws, never blocks the UI. ---- */
+var DIAG_MAX=30;
+function diagState(){
+  var ovs=[]; try{ ['ovSettings','ovInvite','ovResult','ovQuit','ovSet','ovHands','ovPay','ovIntro','ovWhy','ovHome','ovReport','ovRegister','ovLadder'].forEach(function(i){var n=$(i); if(n&&n.classList.contains('show')) ovs.push(i);}); }catch(e){}
+  var rotate=''; try{ rotate=getComputedStyle($('rotate')).display; }catch(e){}
+  var menuOpen=false; try{ menuOpen=el.menu&&el.menu.classList.contains('open'); }catch(e){}
+  var orient=''; try{ orient=(screen.orientation&&screen.orientation.type)||(window.orientation!==undefined?String(window.orientation):''); }catch(e){}
+  return {phase:phase,mode:mode,ov:ovs,menuOpen:menuOpen,rotate:rotate,w:window.innerWidth,h:window.innerHeight,orient:orient};
+}
+function diag(tag,extra){
+  try{
+    var e=diagState(); e.t=Date.now(); e.tag=tag; if(extra) for(var k in extra) e[k]=extra[k];
+    var arr; try{ arr=JSON.parse(localStorage.getItem('dcp:diag')||'[]'); }catch(er){ arr=[]; }
+    arr.push(e); if(arr.length>DIAG_MAX) arr=arr.slice(arr.length-DIAG_MAX);
+    localStorage.setItem('dcp:diag',JSON.stringify(arr));
+  }catch(err){}
+}
+try{
+  document.addEventListener('pointerdown',function(ev){
+    var hit=null; try{ var h=document.elementFromPoint(ev.clientX,ev.clientY); hit=h?(h.id?('#'+h.id):h.tagName+(h.className&&typeof h.className==='string'?'.'+h.className.split(' ').join('.'):'')):null; }catch(e){}
+    diag('pointerdown',{x:Math.round(ev.clientX),y:Math.round(ev.clientY),target:ev.target&&(ev.target.id?('#'+ev.target.id):ev.target.tagName),hit:hit});
+  },true);
+}catch(e){}
+
+/* ---- safety net: if a tap lands squarely on the Start button's on-screen position while it
+   should be live, but something else caught the event (an invisible/overlapping element), fire
+   the start action anyway rather than leaving the app looking frozen. ---- */
+try{
+  document.addEventListener('click',function(ev){
+    var btn=$('startChallenge');
+    if(!btn||phase!=='ready') return;
+    if(ev.target&&(ev.target===btn||btn.contains(ev.target))) return; /* normal path already handles this */
+    var r; try{ r=btn.getBoundingClientRect(); }catch(e){ return; }
+    if(r.width<=0||r.height<=0) return;
+    if(ev.clientX>=r.left&&ev.clientX<=r.right&&ev.clientY>=r.top&&ev.clientY<=r.bottom){
+      diag('ghost-start-recovered',{x:Math.round(ev.clientX),y:Math.round(ev.clientY),target:ev.target&&(ev.target.id?('#'+ev.target.id):ev.target.tagName)});
+      ev.preventDefault(); ev.stopPropagation();
+      start('challenge');
+    }
+  },true);
+}catch(e){}
+
 var el={felt:$('felt'),north:$('north'),south:$('south'),trick:$('trick'),center:$('center'),
   seatW:$('seatW'),seatE:$('seatE'),status:$('status'),clock:$('clock'),clockRow:$('clockRow'),
   won:$('stWon'),lost:$('stLost'),need:$('stNeed'),undo:$('mUndo'),badge:$('contractBadge'),menu:$('menu')};
@@ -710,7 +749,7 @@ function toReady(){
   readyHand(id!==null?id:LAST_ID);
   if(id===null) showHands('You have played every hand available for now. New hands will be added.');
   else if(!canPlay(id)) showPay();
-  requestAnimationFrame(function(){ layout(); render(); });
+  requestAnimationFrame(function(){ layout(); render(); diag('toReady-settled'); });
 }
 function isNewPlayer(){return Object.keys(RES).length===0;}
 function goHome(){
@@ -745,7 +784,7 @@ function showHome(){
   refreshHomeConn();
   el.menu.classList.remove('open');
   $('ovHome').classList.add('show');
-  if($('homeContinue')) $('homeContinue').onclick=function(){ $('ovHome').classList.remove('show'); toReady(); };
+  if($('homeContinue')) $('homeContinue').onclick=function(){ diag('home-continue-tap'); $('ovHome').classList.remove('show'); toReady(); };
   $('homeScores').onclick=function(){ closeAll(); showHands(); };
   $('homeLadder').onclick=function(){ var sid=doneList.length?setStart(Number(doneList[doneList.length-1])):FIRST_ID; showLadder(sid); };
   $('homeQuit').onclick=function(){ $('ovHome').classList.remove('show'); $('quitBtn').click(); };
@@ -1093,7 +1132,7 @@ function onHandClick(e){
 el.north.addEventListener('click',onHandClick);
 el.south.addEventListener('click',onHandClick);
 $('mid').addEventListener('click',function(){ if(pending) pending.fn(); });
-$('startChallenge').onclick=function(){start('challenge');};
+$('startChallenge').onclick=function(){diag('start-btn-normal-click'); start('challenge');};
 $('mUndo').onclick=function(){el.menu.classList.remove('open');undo();};
 $('mInvite').onclick=showInvite;
 $('mLadder').onclick=function(){ el.menu.classList.remove('open'); showLadder(setStart(HAND?HAND.id:FIRST_ID)); };
@@ -1143,6 +1182,22 @@ $('btnRefresh').onclick=function(){
   }catch(e){ go(); }
 };
 $('btnResetLic').onclick=function(){ ['lic','licTs'].forEach(function(k){try{localStorage.removeItem('dcp:'+k);}catch(e){}}); this.textContent='Unlock removed'; };
+$('btnDiag').onclick=function(){
+  var txt='(none yet)';
+  try{ txt=localStorage.getItem('dcp:diag')||'(none yet)'; }catch(e){}
+  var done=function(msg){ var l=$('diagLine'); if(l) l.textContent=msg; };
+  var fallback=function(){
+    try{
+      var ta=document.createElement('textarea');
+      ta.value=txt; ta.style.cssText='position:fixed;left:-9999px;top:0';
+      document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta);
+      done('Copied '+ (JSON.parse(txt).length||0) +' recent events. Paste them to Mike.');
+    }catch(e){ done('Could not copy automatically — screenshot this Settings screen instead.'); }
+  };
+  if(navigator.clipboard&&navigator.clipboard.writeText){
+    navigator.clipboard.writeText(txt).then(function(){ var n=0; try{n=JSON.parse(txt).length;}catch(e){} done('Copied '+n+' recent events. Paste them to Mike.'); }).catch(fallback);
+  } else fallback();
+};
 $('dPause').onclick=function(){ demoPaused=!demoPaused; render(); if(!demoPaused&&G&&(G.turn==='N'||G.turn==='S')) scheduleDemo(); };
 $('dStep').onclick=function(){ demoStep(); };
 $('dStop').onclick=function(){ toReady(); };
