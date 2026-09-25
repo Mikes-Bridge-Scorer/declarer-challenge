@@ -90,7 +90,7 @@ body{background:var(--bg);color:var(--panel-ink);font-family:-apple-system,"Sego
 #center.ready .readybox{display:block}
 
 /* ---- side panel ---- */
-#side{flex:0 0 var(--sidew);display:flex;flex-direction:column;gap:12px;padding:14px;background:rgba(0,0,0,.3);border-left:1px solid rgba(214,173,85,.45);color:#f3efe2;position:relative;overflow:auto;min-height:0}
+#side{flex:0 0 var(--sidew);min-width:0;display:flex;flex-direction:column;gap:12px;padding:14px;background:rgba(0,0,0,.3);border-left:1px solid rgba(214,173,85,.45);color:#f3efe2;position:relative;overflow:auto;min-height:0}
 .stitle{font-family:Georgia,"Times New Roman",serif;font-weight:700;font-size:18px;line-height:1.2;color:var(--brass);padding-right:40px}
 #quitBtn{position:absolute;top:10px;right:10px;z-index:5;width:34px;height:34px;padding:0;border-radius:9px;border:1px solid rgba(255,255,255,.3);background:rgba(255,255,255,.07);color:#f3efe2;cursor:pointer;display:grid;place-items:center}
 #quitBtn svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round}
@@ -382,7 +382,7 @@ var NAMES={N:'North',E:'East',S:'South',W:'West'};
 var RNAME={11:'J',12:'Q',13:'K',14:'A'};
 
 /* Game rules */
-var BUILD='2026-09-23 t';       // shown in Settings so you can tell which version a phone is running
+var BUILD='2026-09-23 u';       // shown in Settings so you can tell which version a phone is running
 var GATE_URL='';               // NOT YET LIVE: once the bridgescorer.com sign-up gate page exists, set its URL here and challenge links will route through it first, instead of straight into the app as they do now.
 var RESULTS_URL='https://script.google.com/macros/s/AKfycbzQ3emQW0yoTcjrUt6OaGjP9EeiUFtx-AoohDgiu1wkqCNwYdeenqMKbPPNAUkHJd-Z9Q/exec'; // LIVE
 var MAX_ATT=3;
