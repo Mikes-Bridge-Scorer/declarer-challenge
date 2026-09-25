@@ -163,7 +163,7 @@ input[type=text]{font:inherit;font-size:16px;width:100%;min-height:40px;border-r
 .tog{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:10px 0;border-bottom:1px solid var(--line);font-size:15px}
 .tog input{width:24px;height:24px;accent-color:#b88a2a}
 
-#rotate{position:fixed;inset:0;z-index:99;display:none;flex-direction:column;align-items:center;justify-content:center;gap:14px;text-align:center;padding:24px;background:var(--felt-2);color:#f3efe2;font-size:18px}
+#rotate{position:fixed;inset:0;z-index:99;display:none;flex-direction:column;align-items:center;justify-content:center;gap:14px;text-align:center;padding:24px;background:var(--felt-2);color:#f3efe2;font-size:18px;pointer-events:none}
 #rotate svg{width:64px;height:64px;fill:none;stroke:var(--brass);stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
 /* only ever shown on touch devices held upright, never on a PC */
 @media (orientation:portrait) and (pointer:coarse) and (max-width:900px){ #rotate{display:flex} }
@@ -382,7 +382,7 @@ var NAMES={N:'North',E:'East',S:'South',W:'West'};
 var RNAME={11:'J',12:'Q',13:'K',14:'A'};
 
 /* Game rules */
-var BUILD='2026-09-23 u';       // shown in Settings so you can tell which version a phone is running
+var BUILD='2026-09-25 a';       // shown in Settings so you can tell which version a phone is running
 var GATE_URL='';               // NOT YET LIVE: once the bridgescorer.com sign-up gate page exists, set its URL here and challenge links will route through it first, instead of straight into the app as they do now.
 var RESULTS_URL='https://script.google.com/macros/s/AKfycbzQ3emQW0yoTcjrUt6OaGjP9EeiUFtx-AoohDgiu1wkqCNwYdeenqMKbPPNAUkHJd-Z9Q/exec'; // LIVE
 var MAX_ATT=3;
