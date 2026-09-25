@@ -382,7 +382,7 @@ var NAMES={N:'North',E:'East',S:'South',W:'West'};
 var RNAME={11:'J',12:'Q',13:'K',14:'A'};
 
 /* Game rules */
-var BUILD='2026-09-23 r';       // shown in Settings so you can tell which version a phone is running
+var BUILD='2026-09-23 s';       // shown in Settings so you can tell which version a phone is running
 var GATE_URL='';               // NOT YET LIVE: once the bridgescorer.com sign-up gate page exists, set its URL here and challenge links will route through it first, instead of straight into the app as they do now.
 var RESULTS_URL='https://script.google.com/macros/s/AKfycbzQ3emQW0yoTcjrUt6OaGjP9EeiUFtx-AoohDgiu1wkqCNwYdeenqMKbPPNAUkHJd-Z9Q/exec'; // LIVE
 var MAX_ATT=3;
@@ -710,6 +710,7 @@ function toReady(){
   readyHand(id!==null?id:LAST_ID);
   if(id===null) showHands('You have played every hand available for now. New hands will be added.');
   else if(!canPlay(id)) showPay();
+  requestAnimationFrame(function(){ layout(); render(); });
 }
 function isNewPlayer(){return Object.keys(RES).length===0;}
 function goHome(){
@@ -1061,7 +1062,7 @@ function showHands(note){
   $('handsBody').innerHTML=(note?'<p><b>'+esc(note)+'</b></p>':'')+'<p class="muted">'+licLine+'</p>'+
     '<table class="tbl"><thead><tr><th>Hand</th><th>Contract</th><th>Technique</th><th>Status</th><th></th></tr></thead><tbody>'+rows+'</tbody></table>'+
     '<div class="acts"><button class="btn primary" data-close="ovHands">Close</button></div>';
-  $('handsBody').querySelector('[data-close]').onclick=function(){ $('ovHands').classList.remove('show'); layout(); render(); };
+  $('handsBody').querySelector('[data-close]').onclick=function(){ $('ovHands').classList.remove('show'); requestAnimationFrame(function(){ layout(); render(); }); };
   el.menu.classList.remove('open');
   $('ovHands').classList.add('show');
 }
@@ -1161,7 +1162,7 @@ $('payGo').onclick=function(){
 $('optBig').onchange=function(){ bigCards=this.checked; save('big',bigCards?'1':'0'); layout(); render(); };
 $('optConfirm').onchange=function(){ confirmTap=this.checked; save('confirm',confirmTap?'1':'0'); selected=null; render(); };
 Array.prototype.forEach.call(document.querySelectorAll('[data-close]'),function(b){
-  b.onclick=function(){ $(b.getAttribute('data-close')).classList.remove('show'); layout(); render(); };
+  b.onclick=function(){ $(b.getAttribute('data-close')).classList.remove('show'); requestAnimationFrame(function(){ layout(); render(); }); };
 });
 window.addEventListener('online',function(){ if($('ovHome').classList.contains('show')) refreshHomeConn(); });
 window.addEventListener('offline',function(){ if($('ovHome').classList.contains('show')) refreshHomeConn(); });
