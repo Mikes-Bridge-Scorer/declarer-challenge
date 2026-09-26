@@ -346,8 +346,10 @@ input[type=text]{font:inherit;font-size:16px;width:100%;min-height:40px;border-r
 
   <div class="ov" id="ovPay"><div class="panel">
     <h2>Unlock more hands</h2>
-    <p>You have played the free hands. To carry on, choose Annual (&pound;10 a year) or Lifetime (&pound;25) on Ko-fi. After you pay you receive a 6-digit code. Enter it below and it is remembered on this device.</p>
+    <p>You have played the free hands. To carry on, choose Annual (&pound;10 a year) or Lifetime (&pound;25) on Ko-fi. After you pay you receive a 6-digit code. Enter it below with your email and it is remembered on this device.</p>
     <div class="acts"><a class="btn primary" id="payAnnual" target="_blank" rel="noopener">Annual &pound;10</a><a class="btn" id="payLife" target="_blank" rel="noopener">Lifetime &pound;25</a></div>
+    <label class="f" for="payEmail">Your email (the one you paid with)</label>
+    <input type="email" id="payEmail" autocomplete="email">
     <label class="f" for="payCode">Your 6-digit code</label>
     <input type="text" id="payCode" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="off">
     <div class="acts"><button class="btn primary" id="payGo">Unlock</button><button class="btn" data-close="ovPay">Not now</button></div>
@@ -377,7 +379,7 @@ var NAMES={N:'North',E:'East',S:'South',W:'West'};
 var RNAME={11:'J',12:'Q',13:'K',14:'A'};
 
 /* Game rules */
-var BUILD='2026-09-25 b';       // shown in Settings so you can tell which version a phone is running
+var BUILD='2026-09-26 b';       // shown in Settings so you can tell which version a phone is running
 var GATE_URL='';               // NOT YET LIVE: once the bridgescorer.com sign-up gate page exists, set its URL here and challenge links will route through it first, instead of straight into the app as they do now.
 var RESULTS_URL='https://script.google.com/macros/s/AKfycbzQ3emQW0yoTcjrUt6OaGjP9EeiUFtx-AoohDgiu1wkqCNwYdeenqMKbPPNAUkHJd-Z9Q/exec'; // LIVE
 var MAX_ATT=3;
@@ -391,8 +393,7 @@ var LAST_ID=135;               // last hand in this build -- exactly 12 complete
 var LICENSE={
   annualUrl:'https://ko-fi.com/mike23528549',
   lifeUrl:'https://ko-fi.com/mike23528549',
-  codes:{'501025':'annual','502510':'lifetime'},
-  demo:{'000000':'lifetime'}     // TEST ONLY: delete this line before the app is made public
+  codes:{'501025':'annual','502510':'lifetime'}
 };
 
 /* PLACEHOLDER hands (test:true). Random deals from a fixed seed, NOT verified, NOT the real hands. */
@@ -618,14 +619,49 @@ function nextHandId(){
   return null;
 }
 function licStatus(){
-  var code=load('lic',''),ts=+load('licTs',0),kind=LICENSE.codes[code]||LICENSE.demo[code];
+  var code=load('lic',''),ts=+load('licTs',0),kind=LICENSE.codes[code];
   if(!kind) return {ok:false};
   if(kind==='lifetime') return {ok:true,kind:'lifetime'};
   var days=365-Math.floor((Date.now()-ts)/86400000);
   return {ok:days>0,kind:'annual',daysLeft:days};
 }
 function canPlay(id){return id<=FREE_MAX||licStatus().ok||!!(incoming&&incoming.set&&setStart(id)===incoming.set);}
-function tryUnlock(code){code=String(code||'').replace(/\D/g,'');if(LICENSE.codes[code]||LICENSE.demo[code]){save('lic',code);save('licTs',Date.now());return true;}return false;}
+/* Unlocking always works offline first (this device saves the licence immediately, so a
+   cruise-ship-wifi buyer isn't blocked). The email+code is also reported to the server in the
+   background -- not to gate access, but so Michael has a record of who's using which shared
+   code and can see if one code is being passed around far more than a normal household would
+   use it. Reported once now if online, otherwise queued and retried next time the app is online. */
+function queueActivation(code,email){ try{ localStorage.setItem('dcp:licPending', JSON.stringify({code:code,email:email})); }catch(e){} }
+function reportActivation(code,email,cb){
+  if(!RESULTS_URL||!navigator.onLine){ if(cb) cb(null); return; }
+  var url=RESULTS_URL+'?action=dcActivate&code='+encodeURIComponent(code)+'&email='+encodeURIComponent(email);
+  fetch(url).then(function(r){return r.json();}).then(function(data){
+    try{ localStorage.removeItem('dcp:licPending'); }catch(e){}
+    if(cb) cb(data);
+  }).catch(function(){ if(cb) cb(null); });
+}
+function flushActivation(){
+  var raw; try{ raw=localStorage.getItem('dcp:licPending'); }catch(e){ raw=null; }
+  if(!raw) return;
+  var p; try{ p=JSON.parse(raw); }catch(e){ return; }
+  if(p&&p.code&&p.email) reportActivation(p.code,p.email);
+}
+function tryUnlock(code,email,cb){
+  code=String(code||'').replace(/\D/g,'');
+  email=String(email||'').trim().toLowerCase();
+  var kind=LICENSE.codes[code];
+  if(!kind){ cb({ok:false,message:'That code is not recognised. Check the 6 digits and try again.'}); return; }
+  if(!email||email.indexOf('@')<0){ cb({ok:false,message:'Please enter the email you paid with.'}); return; }
+  save('lic',code); save('licTs',Date.now());
+  queueActivation(code,email);
+  reportActivation(code,email,function(data){
+    if(data&&data.status==='limit'){
+      cb({ok:true,message:'Unlocked on this device. (This code has been used by more people than a normal purchase -- if you did not buy it yourself, please get your own code on Ko-fi.)'});
+    } else {
+      cb({ok:true,message:'Unlocked. Thank you!'});
+    }
+  });
+}
 function contractText(h){h=h||HAND;return h.level+SYM[h.trump];}
 function contractHtml(h){h=h||HAND;return h.level+suitHtml(h.trump);}
 function resultText(id,att){var h=HANDS[id],diff=att.tr-h.need;return diff>=0?contractText(h)+' made'+(diff?' +'+diff:''):contractText(h)+' down '+(-diff);}
@@ -1120,6 +1156,7 @@ function showIntro(){
 }
 function showPay(){
   $('payMsg').textContent=''; $('payCode').value='';
+  var p=getPlayer(); $('payEmail').value=p?p.email:'';
   el.menu.classList.remove('open');
   $('ovPay').classList.add('show');
 }
@@ -1211,15 +1248,18 @@ $('handsBody').onclick=function(e){
   else if(act==='set'){ closeAll(); showSet(+b.getAttribute('data-sid')); }
 };
 $('payGo').onclick=function(){
-  if(tryUnlock($('payCode').value)){ $('payMsg').textContent='Unlocked. Thank you!'; setTimeout(function(){ $('ovPay').classList.remove('show'); toReady(); },900); }
-  else $('payMsg').textContent='That code is not recognised. Check the 6 digits and try again.';
+  $('payMsg').textContent='Checking...';
+  tryUnlock($('payCode').value,$('payEmail').value,function(res){
+    $('payMsg').textContent=res.message;
+    if(res.ok) setTimeout(function(){ $('ovPay').classList.remove('show'); toReady(); },1400);
+  });
 };
 $('optBig').onchange=function(){ bigCards=this.checked; save('big',bigCards?'1':'0'); layout(); render(); };
 $('optConfirm').onchange=function(){ confirmTap=this.checked; save('confirm',confirmTap?'1':'0'); selected=null; render(); };
 Array.prototype.forEach.call(document.querySelectorAll('[data-close]'),function(b){
   b.onclick=function(){ $(b.getAttribute('data-close')).classList.remove('show'); requestAnimationFrame(function(){ layout(); render(); }); };
 });
-window.addEventListener('online',function(){ if($('ovHome').classList.contains('show')) refreshHomeConn(); });
+window.addEventListener('online',function(){ if($('ovHome').classList.contains('show')) refreshHomeConn(); flushActivation(); });
 window.addEventListener('offline',function(){ if($('ovHome').classList.contains('show')) refreshHomeConn(); });
 window.addEventListener('resize',function(){ layout(); render(); });
 var rq=0;
@@ -1254,6 +1294,7 @@ window.addEventListener('orientationchange',function(){ setTimeout(function(){ l
   else if(load('intro','')!=='1') showIntro();
   else showHome();
   if(getPlayer()){ syncPlayer(function(){ flushQueue(); }); }
+  flushActivation();
   requestAnimationFrame(function(){ layout(); render(); });
 })();
 })();
