@@ -379,7 +379,7 @@ var NAMES={N:'North',E:'East',S:'South',W:'West'};
 var RNAME={11:'J',12:'Q',13:'K',14:'A'};
 
 /* Game rules */
-var BUILD='2026-09-26 b';       // shown in Settings so you can tell which version a phone is running
+var BUILD='2026-09-26 d';       // shown in Settings so you can tell which version a phone is running
 var GATE_URL='';               // NOT YET LIVE: once the bridgescorer.com sign-up gate page exists, set its URL here and challenge links will route through it first, instead of straight into the app as they do now.
 var RESULTS_URL='https://script.google.com/macros/s/AKfycbzQ3emQW0yoTcjrUt6OaGjP9EeiUFtx-AoohDgiu1wkqCNwYdeenqMKbPPNAUkHJd-Z9Q/exec'; // LIVE
 var MAX_ATT=3;
@@ -391,8 +391,8 @@ var LAST_ID=135;               // last hand in this build -- exactly 12 complete
 /* Licence: same numeric 6-digit pattern as the other Bridge at Sea apps (5xxxxx = this app).
    TODO before release: create the two Ko-fi shop items and paste their links below. */
 var LICENSE={
-  annualUrl:'https://ko-fi.com/mike23528549',
-  lifeUrl:'https://ko-fi.com/mike23528549',
+  annualUrl:'https://ko-fi.com/s/00148931e7',
+  lifeUrl:'https://ko-fi.com/s/060efe1516',
   codes:{'501025':'annual','502510':'lifetime'}
 };
 
@@ -437,6 +437,18 @@ try{
   document.addEventListener('pointerdown',function(ev){
     var hit=null; try{ var h=document.elementFromPoint(ev.clientX,ev.clientY); hit=h?(h.id?('#'+h.id):h.tagName+(h.className&&typeof h.className==='string'?'.'+h.className.split(' ').join('.'):'')):null; }catch(e){}
     diag('pointerdown',{x:Math.round(ev.clientX),y:Math.round(ev.clientY),target:ev.target&&(ev.target.id?('#'+ev.target.id):ev.target.tagName),hit:hit});
+  },true);
+}catch(e){}
+
+/* ---- keep a focused field visible above the on-screen keyboard: on phones the keyboard covers
+   the bottom of an overlay panel (e.g. the email/code fields on "Unlock more hands"), so scroll
+   the focused field into the middle of its panel once the keyboard has finished animating in. ---- */
+try{
+  document.addEventListener('focusin',function(ev){
+    var t=ev.target;
+    if(t&&(t.tagName==='INPUT'||t.tagName==='TEXTAREA')&&t.closest('.ov')){
+      setTimeout(function(){ try{ t.scrollIntoView({block:'center',behavior:'smooth'}); }catch(e){} },300);
+    }
   },true);
 }catch(e){}
 
