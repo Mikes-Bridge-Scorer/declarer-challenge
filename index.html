@@ -1212,7 +1212,7 @@ $('quitBtn').onclick=function(){
   $('quitText').textContent=t; el.menu.classList.remove('open'); $('ovQuit').classList.add('show');
 };
 $('quitRestart').onclick=leaveHand;
-$('quitExit').onclick=function(){ abandonIfNeeded(); try{window.close();}catch(e){} setTimeout(function(){ location.href='https://bridgescorer.com/'; },300); };
+$('quitExit').onclick=function(){ abandonIfNeeded(); location.href='https://bridgescorer.com/'; };
 document.addEventListener('click',function(e){ if(el.menu.classList.contains('open')&&!e.target.closest('#menu')&&!e.target.closest('#menuBtn')){ el.menu.classList.remove('open'); $('menuBtn').setAttribute('aria-expanded','false'); } });
 $('menuBtn').onclick=function(){ var o=el.menu.classList.toggle('open'); this.setAttribute('aria-expanded',o?'true':'false'); };
 $('btnReset').onclick=function(){
