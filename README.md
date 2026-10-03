@@ -18,9 +18,10 @@ Turn the phone sideways to play. Opened from the home-screen icon it runs full s
 - You are South, the declarer. Make the contract against the computer defenders. Dummy (North) is played by you too.
 - Study the auction: it tells you where the missing high cards are likely to be.
 - Tap a card once to lift it and again to play it (on a PC, one click plays it).
-- Each hand allows three attempts. Made first time scores 10 points, second time 6, third time 3. If you fail, down 1 scores 5, down 2 scores 3, down 3 scores 1. Time only breaks ties.
-- Hands 100 to 102 make up the challenge. Finish them, then send your score to a friend to beat.
-- When a hand is finished, **Show me how it is done** replays the winning line.
+- Each hand allows three attempts. Made first time scores 10 points, second time 6, third time 3. If you fail, down 1 scores 5, down 2 scores 3, down 3 scores 1. Each overtrick adds a point (up to two per hand). Time only breaks ties.
+- Every three hands make a challenge (hands 100 to 102, then 103 to 105, and so on). Finish one, then send your score to a friend to beat. Each challenge has its own score.
+- Challenges 1 and 2 (hands 100 to 105) are free. After that an unlock code is needed, except for a challenge a friend has sent you.
+- When a hand is finished, **Show me how it is done** replays the winning line, and **Read the explanation** tells you why it works.
 
 ## Status
 

@@ -441,7 +441,7 @@ var NAMES={N:'North',E:'East',S:'South',W:'West'};
 var RNAME={11:'J',12:'Q',13:'K',14:'A'};
 
 /* Game rules */
-var BUILD='2026-10-03 a';       // shown in Settings so you can tell which version a phone is running
+var BUILD='2026-10-03 b';       // shown in Settings so you can tell which version a phone is running
 var GATE_URL='';               // NOT YET LIVE: once the bridgescorer.com sign-up gate page exists, set its URL here and challenge links will route through it first, instead of straight into the app as they do now.
 var RESULTS_URL='https://script.google.com/macros/s/AKfycbzQ3emQW0yoTcjrUt6OaGjP9EeiUFtx-AoohDgiu1wkqCNwYdeenqMKbPPNAUkHJd-Z9Q/exec'; // LIVE
 var MAX_ATT=3;
@@ -876,6 +876,12 @@ function readyHand(id){
   el.clockRow.hidden=true; closeAll();
   loadHand(id); newGame(); render();
 }
+function goToHand(id){
+  layout();
+  readyHand(id);
+  if(!canPlay(id)) showPay();
+  requestAnimationFrame(function(){ layout(); render(); diag('toReady-settled'); });
+}
 function toReady(){
   layout();
   var id=nextHandId();
@@ -1157,10 +1163,25 @@ function showInvite(){
 }
 function afterHand(){
   var sid=setStart(HAND.id);
-  if(mode==='challenge'&&resultData&&resultData.done&&setPending(sid)){
-    save('setSeen'+sid,'1'); closeAll();
-    offerRegistration(function(){ showSet(sid); });
-    return;
+  if(mode==='challenge'&&resultData){
+    if(!resultData.done){
+      // "Try again": replay this exact hand. Don't let some other, unrelated
+      // unfinished hand elsewhere in the app hijack this button.
+      goToHand(HAND.id);
+      return;
+    }
+    if(setPending(sid)){
+      save('setSeen'+sid,'1'); closeAll();
+      offerRegistration(function(){ showSet(sid); });
+      return;
+    }
+    // "Next hand": move on within THIS challenge first, if it still has an
+    // unfinished hand, rather than jumping to the lowest-numbered unfinished
+    // hand anywhere in the app (which could be an old hand abandoned earlier).
+    var ids=setIdsOf(sid);
+    for(var i=0;i<ids.length;i++){
+      if(!isDone(ids[i])){ goToHand(ids[i]); return; }
+    }
   }
   toReady();
 }
