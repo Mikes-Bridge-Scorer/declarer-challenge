@@ -441,7 +441,7 @@ var NAMES={N:'North',E:'East',S:'South',W:'West'};
 var RNAME={11:'J',12:'Q',13:'K',14:'A'};
 
 /* Game rules */
-var BUILD='2026-10-04 a';       // shown in Settings so you can tell which version a phone is running
+var BUILD='2026-10-04 b';       // shown in Settings so you can tell which version a phone is running
 var GATE_URL='';               // NOT YET LIVE: once the bridgescorer.com sign-up gate page exists, set its URL here and challenge links will route through it first, instead of straight into the app as they do now.
 var RESULTS_URL='https://script.google.com/macros/s/AKfycbzQ3emQW0yoTcjrUt6OaGjP9EeiUFtx-AoohDgiu1wkqCNwYdeenqMKbPPNAUkHJd-Z9Q/exec'; // LIVE
 var MAX_ATT=3;
@@ -793,6 +793,30 @@ function submitResult(id,cb){
     q=q.filter(function(x){return x!==id;}); save('submitQueue', JSON.stringify(q));
   }).catch(function(){ queueSubmit(id); }).then(function(){ if(cb) cb(); });
 }
+/* ---------- anonymous play log: one row per finished attempt, no name or email ---------- */
+function visitorId(){ var v=load('vid',''); if(!v){ v=Date.now().toString(36)+Math.random().toString(36).slice(2,8); save('vid',v); } return v; }
+function playQueue(){ var q=[]; try{ q=JSON.parse(load('playQueue','[]'))||[]; }catch(e){} return q; }
+var playBusy=false;
+function logPlay(o){
+  try{
+    var q=playQueue(); o.at=new Date().toISOString(); q.push(o);
+    if(q.length>40) q=q.slice(q.length-40);
+    save('playQueue', JSON.stringify(q)); flushPlays();
+  }catch(e){}
+}
+function flushPlays(){
+  if(playBusy||!serverReady()) return;
+  var q=playQueue(); if(!q.length) return;
+  var o=q[0]; playBusy=true;
+  var url=RESULTS_URL+'?action=dcPlay&visitor='+encodeURIComponent(visitorId())+'&hand='+o.h+'&made='+(o.m?1:0)+
+    '&tricks='+o.tr+'&need='+o.n+'&secs='+o.t+'&attempt='+o.a+'&points='+o.p+'&reg='+(getPlayer()?1:0)+
+    '&src='+encodeURIComponent(o.src||'')+'&build='+encodeURIComponent(BUILD)+'&at='+encodeURIComponent(o.at||'');
+  fetch(url).then(function(r){ if(!r.ok) throw 0; return r.json(); }).then(function(d){
+    if(!d||d.status!=='ok'||!d.play) throw 0;      // server not updated yet: keep it and try again later
+    var q2=playQueue(); q2.shift(); save('playQueue', JSON.stringify(q2));
+    playBusy=false; flushPlays();
+  }).catch(function(){ playBusy=false; });
+}
 function submitSequential(ids,cb){
   ids=ids.slice();
   function next(){
@@ -1023,6 +1047,8 @@ function finish(){
   if(mode==='challenge'){
     pts=scoreFor(made,-diff,attempt,diff);
     recordAttempt(HAND.id,{p:pts,t:secs,tr:tricks,made:made});
+    logPlay({h:HAND.id,m:made,tr:tricks,n:HAND.need,t:secs,a:attempt,p:pts,
+      src:(incoming&&incoming.set&&setStart(HAND.id)===incoming.set)?'invite':(HAND.id<=FREE_MAX?'free':'licence')});
     save('inprog','');
     done=isDone(HAND.id);
     if(done) submitResult(HAND.id);
@@ -1433,7 +1459,7 @@ window.addEventListener('orientationchange',function(){ setTimeout(function(){ l
   else if(load('intro','')!=='1') showIntro();
   else showHome();
   if(getPlayer()){ syncPlayer(function(){ flushQueue(); }); }
-  flushActivation();
+  flushActivation(); flushPlays();
   requestAnimationFrame(function(){ layout(); render(); });
 })();
 })();
