@@ -349,9 +349,9 @@ input[type=text]{font:inherit;font-size:16px;width:100%;min-height:40px;border-r
 
   <div class="ov" id="ovPay"><div class="panel">
     <h2>Unlock more hands</h2>
-    <p>You have played the free hands. To carry on, choose Annual (&pound;10 a year) or Lifetime (&pound;25) on Ko-fi. After you pay you receive a 6-digit code. Enter it below with your email and it is remembered on this device.</p>
+    <p><b>Have a code?</b> Enter it below with your email. It is remembered on this device.</p><p>No code yet? Choose Annual (&pound;10 a year) or Lifetime (&pound;25) on Ko-fi and you will receive a 6-digit code.</p>
     <div class="acts"><a class="btn primary" id="payAnnual" target="_blank" rel="noopener">Annual &pound;10</a><a class="btn" id="payLife" target="_blank" rel="noopener">Lifetime &pound;25</a></div>
-    <label class="f" for="payEmail">Your email (the one you paid with)</label>
+    <label class="f" for="payEmail">Your email</label>
     <input type="email" id="payEmail" autocomplete="email">
     <label class="f" for="payCode">Your 6-digit code</label>
     <input type="text" id="payCode" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="off">
@@ -441,7 +441,7 @@ var NAMES={N:'North',E:'East',S:'South',W:'West'};
 var RNAME={11:'J',12:'Q',13:'K',14:'A'};
 
 /* Game rules */
-var BUILD='2026-10-07 a';       // shown in Settings so you can tell which version a phone is running
+var BUILD='2026-10-07 b';       // shown in Settings so you can tell which version a phone is running
 var GATE_URL='';               // NOT YET LIVE: once the bridgescorer.com sign-up gate page exists, set its URL here and challenge links will route through it first, instead of straight into the app as they do now.
 var RESULTS_URL='https://script.google.com/macros/s/AKfycbzQ3emQW0yoTcjrUt6OaGjP9EeiUFtx-AoohDgiu1wkqCNwYdeenqMKbPPNAUkHJd-Z9Q/exec'; // LIVE
 var MAX_ATT=3;
@@ -455,7 +455,8 @@ var LAST_ID=144;               // last hand in this build -- exactly 12 complete
 var LICENSE={
   annualUrl:'https://ko-fi.com/s/00148931e7',
   lifeUrl:'https://ko-fi.com/s/060efe1516',
-  codes:{'501025':'annual','502510':'lifetime'}
+  codes:{'501025':'annual','502510':'lifetime'},
+  gift:{'502510':true}          // codes given away freely: never show the 'used by more people' warning
 };
 
 /* PLACEHOLDER hands (test:true). Random deals from a fixed seed, NOT verified, NOT the real hands. */
@@ -751,11 +752,11 @@ function tryUnlock(code,email,cb){
   email=String(email||'').trim().toLowerCase();
   var kind=LICENSE.codes[code];
   if(!kind){ cb({ok:false,message:'That code is not recognised. Check the 6 digits and try again.'}); return; }
-  if(!email||email.indexOf('@')<0){ cb({ok:false,message:'Please enter the email you paid with.'}); return; }
+  if(!email||email.indexOf('@')<0){ cb({ok:false,message:'Please enter your email address.'}); return; }
   save('lic',code); save('licTs',Date.now());
   queueActivation(code,email);
   reportActivation(code,email,function(data){
-    if(data&&data.status==='limit'){
+    if(data&&data.status==='limit'&&!LICENSE.gift[code]){
       cb({ok:true,message:'Unlocked on this device. (This code has been used by more people than a normal purchase -- if you did not buy it yourself, please get your own code on Ko-fi.)'});
     } else {
       cb({ok:true,message:'Unlocked. Thank you!'});
