@@ -488,7 +488,7 @@ var NAMES={N:'North',E:'East',S:'South',W:'West'};
 var RNAME={11:'J',12:'Q',13:'K',14:'A'};
 
 /* Game rules */
-var BUILD='2026-10-10 b';       // shown in Settings so you can tell which version a phone is running
+var BUILD='2026-10-10 c';       // shown in Settings so you can tell which version a phone is running
 var GATE_URL='';               // NOT YET LIVE: once the bridgescorer.com sign-up gate page exists, set its URL here and challenge links will route through it first, instead of straight into the app as they do now.
 var RESULTS_URL='https://script.google.com/macros/s/AKfycbzQ3emQW0yoTcjrUt6OaGjP9EeiUFtx-AoohDgiu1wkqCNwYdeenqMKbPPNAUkHJd-Z9Q/exec'; // LIVE
 var MAX_ATT=3;
@@ -1321,10 +1321,10 @@ function showResult(){
     if(r.done) left+='<p>Hand complete. Your score for this hand is <b>'+b.p+' points</b> in '+fmtSec(b.t)+'.</p>';
     else left+='<p>You have '+remain+' attempt'+(remain===1?'':'s')+' left. Making it next time scores '+(r.att+1===2?6:3)+' points, plus a bonus for any overtricks.</p>';
     var label=!r.done?'Try again':(setPending(setStart(id))?'See your challenge score':'Next hand');
-    right+='<div class="acts"><button class="btn primary" id="againBtn">'+label+'</button>'+((r.done&&HAND.sol)?'<button class="btn" id="solBtn">Show me how it is done</button>':'')+((r.done&&HAND.pbp)?'<button class="btn" id="whyBtn">Read the explanation</button>':'')+'</div>';
+    right+='<div class="acts"><button class="btn primary" id="againBtn">'+label+'</button>'+(r.done?'<button class="btn" id="practiceBtn">Practise this hand</button>':'')+((r.done&&HAND.sol)?'<button class="btn" id="solBtn">Show me how it is done</button>':'')+((r.done&&HAND.pbp)?'<button class="btn" id="whyBtn">Read the explanation</button>':'')+'</div>';
   } else {
     left+='<p class="muted">Practice is not scored.</p>';
-    right+='<div class="acts"><button class="btn primary" id="againBtn">Back to the challenge</button><button class="btn" id="practiceBtn">Practise again</button>'+((isDone(id)&&HAND.sol)?'<button class="btn" id="solBtn">Show me how it is done</button>':'')+'</div>';
+    right+='<div class="acts"><button class="btn primary" id="againBtn">Back to the challenge</button><button class="btn" id="practiceBtn">Practise again</button>'+((isDone(id)&&HAND.sol)?'<button class="btn" id="solBtn">Show me how it is done</button>':'')+((isDone(id)&&HAND.pbp)?'<button class="btn" id="whyBtn">Read the explanation</button>':'')+'</div>';
   }
   $('resultPanel').innerHTML='<div class="res"><div>'+left+'</div><div>'+right+'</div></div>';
   $('ovResult').classList.add('show');
