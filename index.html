@@ -164,6 +164,51 @@ input[type=text]{font:inherit;font-size:16px;width:100%;min-height:40px;border-r
 /* only ever shown on touch devices held upright, never on a PC */
 @media (orientation:portrait) and (pointer:coarse) and (max-width:900px){ #rotate{display:flex} }
 @media (max-width:640px){ .res{grid-template-columns:1fr} }
+
+/* ---- large card corners (Settings: "Large card corners", on by default) ---- */
+.card .ix{display:none}
+html.bix .card .ix{display:flex;flex-direction:column;align-items:center;position:absolute;left:0;top:0;width:33%;padding:6% 0 5%;background:#fff;
+  border-top-left-radius:calc(var(--w)*.07);border-bottom-right-radius:calc(var(--w)*.07);
+  font:700 calc(var(--w)*.27)/1 Arial,Helvetica,sans-serif;color:#151515;letter-spacing:-.07em;pointer-events:none}
+html.bix .card .ix.ten{font-size:calc(var(--w)*.22)}
+html.bix .card .ix b{font-size:calc(var(--w)*.25);line-height:1;margin-top:3%;letter-spacing:0}
+html.bix .card .ix.r{color:#c1272d}
+
+/* ---- light table (Settings: "Light table"). Palette suggested by Geoff Neal. ---- */
+:root.lt{--felt-1:#eef4ef;--felt-2:#dfeae2;--felt-3:#d2e2d6;--brass:#345F55;--ivory:#FFFDF9;--ink:#243D38;--red:#c1272d;
+  --panel:#FFFDF9;--panel-ink:#243D38;--muted:#61746B;--line:#E0E7DF;--bg:#F5F5EF}
+:root.lt body{color:#243D38}
+.lt .hand .tag{color:#243D38;text-shadow:none}
+.lt .card{filter:drop-shadow(0 1px 2px rgba(36,61,56,.28))}
+.lt .card.dim{filter:drop-shadow(0 1px 2px rgba(36,61,56,.28)) brightness(.88)}
+.lt .card.legal{box-shadow:0 0 0 2px #345F55}
+.lt .card.win{box-shadow:0 0 0 3px #345F55,0 0 14px rgba(52,95,85,.45)}
+.lt .seat{color:#243D38}
+.lt .seat .who{background:#E4EEE7;color:#243D38}
+.lt .seat.turn .who{background:#345F55;color:#fff}
+.lt .cb{border-color:#fff;background:radial-gradient(circle at 50% 50%,rgba(255,255,255,.35) 0 16%,transparent 17%),repeating-linear-gradient(45deg,#345F55 0 5px,#2c5249 5px 10px);box-shadow:0 1px 3px rgba(36,61,56,.3)}
+.lt #auction{border-color:#E0E7DF;box-shadow:0 2px 8px rgba(36,61,56,.12);border-radius:14px}
+.lt .readybox{color:#243D38}
+.lt .readybox .chal{color:#345F55}
+.lt #side{background:#FFFDF9;border-left:1px solid #E0E7DF;color:#243D38}
+.lt .stitle{color:#345F55}
+.lt #quitBtn{border-color:#E0E7DF;background:#E4EEE7;color:#345F55}
+.lt .contract{background:#E4EEE7;color:#243D38}
+.lt .hud .r2{border-bottom-color:#E0E7DF}
+.lt #status{color:#345F55}
+.lt .mbtn,.lt .btn{border:1px solid #E0E7DF;background:#E4EEE7;color:#345F55;border-radius:999px}
+.lt .btn.primary,.lt .panel .btn.primary{background:#345F55;border-color:#345F55;color:#fff}
+.lt .panel .btn{border-color:#E0E7DF;background:#E4EEE7;color:#345F55}
+@media (hover:hover){ .lt .btn.primary:hover{background:#284D43} .lt .mbtn:hover,.lt .btn:not(.primary):hover{background:#d8e6dc} }
+.lt #menu.open{background:#FFFDF9;border:1px solid #E0E7DF;box-shadow:0 10px 30px rgba(36,61,56,.18)}
+.lt .ov{background:rgba(36,61,56,.32)}
+.lt .panel{border:1px solid #E0E7DF;border-radius:20px;box-shadow:0 12px 34px rgba(36,61,56,.18)}
+.lt .badge{background:#345F55;color:#fff}
+.lt .cmp,.lt .futurenote{background:#E4EEE7}
+.lt .tog input{accent-color:#345F55}
+.lt #rotate{background:#F5F5EF;color:#243D38}
+.lt #rotate svg{stroke:#345F55}
+
 @media (prefers-reduced-motion:reduce){ *{transition:none!important;animation:none!important} }
 </style>
 <style id="cardimgs">
@@ -276,6 +321,8 @@ input[type=text]{font:inherit;font-size:16px;width:100%;min-height:40px;border-r
     <h2>Settings</h2>
     <label class="tog"><span>Tap a card twice to play it<br><span class="muted" style="font-size:12px">First tap lifts the card, second tap plays it. Handy on a phone; off by default on a PC.</span></span><input type="checkbox" id="optConfirm"></label>
     <label class="tog"><span>Larger cards<br><span class="muted" style="font-size:12px">Bigger hands and a smaller middle. Try this if the cards are hard to read.</span></span><input type="checkbox" id="optBig"></label>
+    <label class="tog"><span>Large card corners<br><span class="muted" style="font-size:12px">Bigger numbers and suit signs in the corner of each card.</span></span><input type="checkbox" id="optIdx"></label>
+    <label class="tog"><span>Light table<br><span class="muted" style="font-size:12px">A light, modern look in place of the green baize.</span></span><input type="checkbox" id="optLight"></label>
     <p class="muted" style="font-size:13px;margin-top:10px" id="playerLine"></p>
     <div class="acts"><button class="btn" id="btnRegister">Save my score / edit details</button></div>
     <p class="muted" style="font-size:12px;margin-top:10px" id="buildLine"></p>
@@ -441,7 +488,7 @@ var NAMES={N:'North',E:'East',S:'South',W:'West'};
 var RNAME={11:'J',12:'Q',13:'K',14:'A'};
 
 /* Game rules */
-var BUILD='2026-10-08 c';       // shown in Settings so you can tell which version a phone is running
+var BUILD='2026-10-10 a';       // shown in Settings so you can tell which version a phone is running
 var GATE_URL='';               // NOT YET LIVE: once the bridgescorer.com sign-up gate page exists, set its URL here and challenge links will route through it first, instead of straight into the app as they do now.
 var RESULTS_URL='https://script.google.com/macros/s/AKfycbzQ3emQW0yoTcjrUt6OaGjP9EeiUFtx-AoohDgiu1wkqCNwYdeenqMKbPPNAUkHJd-Z9Q/exec'; // LIVE
 var MAX_ATT=3;
@@ -475,6 +522,10 @@ var touch=false; try{touch=window.matchMedia('(pointer:coarse)').matches;}catch(
 var confirmTap = load('confirm',touch?'1':'0')==='1';
 var bigH=110, smallH=64, th=60, tw=42, PAD=24;
 var bigCards = load('big',touch?'1':'0')==='1';
+var bigIdx = load('bigidx','1')==='1', lightLook = load('look','green')==='light';
+function applyLook(){ var d=document.documentElement; d.classList.toggle('bix',bigIdx); d.classList.toggle('lt',lightLook);
+  var m=document.querySelector('meta[name="theme-color"]'); if(m) m.setAttribute('content',lightLook?'#F5F5EF':'#0b3a2a'); }
+applyLook();
 
 var $=function(id){return document.getElementById(id);};
 
@@ -1097,7 +1148,8 @@ function cardHtml(c,w,h,cls,ml,seat,disabled){
   var tag=seat?'button':'div';
   var attrs=seat?(' data-id="'+c.id+'" data-seat="'+seat+'"'+(disabled?' disabled tabindex="-1"':'')):'';
   return '<'+tag+' class="card cf-'+c.id+(cls?' '+cls:'')+'"'+attrs+
-    ' style="--w:'+w+'px;--h:'+h+'px;margin-left:'+ml+'px" aria-label="'+rankLabel(c.r)+' of '+SUITNAME[c.s]+'"></'+tag+'>';
+    ' style="--w:'+w+'px;--h:'+h+'px;margin-left:'+ml+'px" aria-label="'+rankLabel(c.r)+' of '+SUITNAME[c.s]+'">'+
+    '<span class="ix'+(c.s==='H'||c.s==='D'?' r':'')+(c.r===10?' ten':'')+'" aria-hidden="true">'+rankLabel(c.r)+'<b>'+SYM[c.s]+'</b></span></'+tag+'>';
 }
 function suitDisplayOrder(){
   var COLOR={S:'black',H:'red',D:'red',C:'black'},MATE={S:'C',C:'S',H:'D',D:'H'},RANKORD=['S','H','D','C'];
@@ -1365,7 +1417,7 @@ $('mUndo').onclick=function(){el.menu.classList.remove('open');undo();};
 $('mInvite').onclick=showInvite;
 $('mLadder').onclick=function(){ el.menu.classList.remove('open'); showLadder(setStart(HAND?HAND.id:FIRST_ID)); };
 function openSettings(){
-  $('optConfirm').checked=confirmTap; $('optBig').checked=bigCards;
+  $('optConfirm').checked=confirmTap; $('optBig').checked=bigCards; $('optIdx').checked=bigIdx; $('optLight').checked=lightLook;
   var p=getPlayer();
   $('playerLine').textContent=p?('Saving scores as '+p.name+(p.town?', '+p.town:'')+' ('+p.email+').'):'Not saving scores yet -- your progress only lives on this phone.';
   el.menu.classList.remove('open'); $('ovSettings').classList.add('show');
@@ -1456,6 +1508,8 @@ $('payGo').onclick=function(){
   });
 };
 $('optBig').onchange=function(){ bigCards=this.checked; save('big',bigCards?'1':'0'); layout(); render(); };
+$('optIdx').onchange=function(){ bigIdx=this.checked; save('bigidx',bigIdx?'1':'0'); applyLook(); };
+$('optLight').onchange=function(){ lightLook=this.checked; save('look',lightLook?'light':'green'); applyLook(); };
 $('optConfirm').onchange=function(){ confirmTap=this.checked; save('confirm',confirmTap?'1':'0'); selected=null; render(); };
 Array.prototype.forEach.call(document.querySelectorAll('[data-close]'),function(b){
   b.onclick=function(){ $(b.getAttribute('data-close')).classList.remove('show'); requestAnimationFrame(function(){ layout(); render(); }); };
