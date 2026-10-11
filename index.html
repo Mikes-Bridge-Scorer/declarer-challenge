@@ -291,7 +291,7 @@ html.bix .card .ix.r{color:#c1272d}
 
   <aside id="side">
     <button id="quitBtn" aria-label="Quit"><svg viewBox="0 0 24 24"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg></button>
-    <div class="stitle">Declarer Challenge</div>
+    <div class="stitle" id="stitle">Declarer Challenge</div>
     <div id="auction" aria-label="Auction"></div>
     <div class="hud">
       <div class="contract" id="contractBadge"></div>
@@ -300,6 +300,7 @@ html.bix .card .ix.r{color:#c1272d}
       <div class="r2"><span>Tricks lost</span><b id="stLost">0</b></div>
       <div class="r2" id="clockRow" hidden><span>Time</span><b id="clock">0:00</b></div>
       <div id="status" aria-live="polite"></div>
+      <div id="lastTrick" hidden style="font-size:13px;line-height:1.35;margin-top:6px;opacity:.9"></div>
       <div id="demoCtl" hidden><button class="btn" id="dPause">Pause</button><button class="btn" id="dStep">Step</button><button class="btn" id="dStop">Stop</button></div>
     </div>
     <button class="mbtn" id="menuBtn" aria-expanded="false">Menu</button>
@@ -489,7 +490,7 @@ var NAMES={N:'North',E:'East',S:'South',W:'West'};
 var RNAME={11:'J',12:'Q',13:'K',14:'A'};
 
 /* Game rules */
-var BUILD='2026-10-11 b';       // shown in Settings so you can tell which version a phone is running
+var BUILD='2026-10-11 c';       // shown in Settings so you can tell which version a phone is running
 var GATE_URL='';               // NOT YET LIVE: once the bridgescorer.com sign-up gate page exists, set its URL here and challenge links will route through it first, instead of straight into the app as they do now.
 var RESULTS_URL='https://script.google.com/macros/s/AKfycbzQ3emQW0yoTcjrUt6OaGjP9EeiUFtx-AoohDgiu1wkqCNwYdeenqMKbPPNAUkHJd-Z9Q/exec'; // LIVE
 var MAX_ATT=3;
@@ -651,7 +652,7 @@ function doPlay(seat,card){
     G.turn=null; G.lastWinner=winnerOf(G.trick).seat;
     var tok=token;
     var fn=function(){ if(tok!==token||!pending) return; clearTimeout(pending.id); pending=null; resolveTrick(); };
-    pending={fn:fn}; pending.id=setTimeout(fn,1150);
+    pending={fn:fn}; pending.id=setTimeout(fn,DEF?1800:1150);
     render();
   } else {
     G.turn=nextSeat(seat); render(); advance();
@@ -660,6 +661,7 @@ function doPlay(seat,card){
 function resolveTrick(){
   var w=winnerOf(G.trick).seat;
   if(w==='N'||w==='S') G.won.ns++; else G.won.ew++;
+  G.prevTrick={cards:G.trick.slice(),winner:w};
   G.trick=[]; G.ledSuit=null; G.lastWinner=null; G.trickNo++; G.turn=w;
   if(G.trickNo>13){ finish(); return; }
   render(); advance();
@@ -672,7 +674,7 @@ function advance(){
   setTimeout(function(){
     if(tok!==token||phase!=='play'||G.turn!==t) return;
     doPlay(t,(DEF&&(t==='N'||t==='S'))?declPlay(t):aiPlay(t));
-  }, first?450:650);
+  }, DEF?(first?700:1100):(first?450:650));
 }
 function onCardTap(id,seat){
   if(!canAct()||G.turn!==seat) return;
@@ -1311,6 +1313,10 @@ function renderTrick(){
     var cls=(i===G.trick.length-1&&!pending?'new':'')+(G.lastWinner===p.seat?' win':'');
     slots[vp]=cardHtml(p.card,tw,th,cls.trim(),0,null,false);
   });
+  if(DEF&&phase==='play'&&mode!=='demo'&&G.trickNo===1&&!G.trick.length&&G.turn===DEF.me){
+    el.trick.innerHTML='<div style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,.35);color:#fff;padding:10px 16px;border-radius:10px;font-size:18px;font-weight:600;white-space:nowrap">You are '+NAMES[DEF.me]+'. Choose your opening lead.</div>';
+    return;
+  }
   el.trick.innerHTML=['n','w','e','s'].map(function(k){return '<div class="slot '+k+'" style="z-index:'+(z[k.toUpperCase()]||0)+'">'+slots[k.toUpperCase()]+'</div>';}).join('');
 }
 function renderAuction(){
@@ -1331,7 +1337,7 @@ function statusText(){
     if(phase==='done') return 'Hand complete';
     if(mode==='demo'&&!pending) return 'How it is done: trick '+Math.min(G.trickNo,13)+' of 13';
     if(pending) return (G.lastWinner===DEF.me?'You win':G.lastWinner==='N'?'Dummy wins':G.lastWinner==='S'?'Declarer wins':'Partner wins')+' the trick';
-    if(G.turn===DEF.me) return (G.trickNo===1&&!G.trick.length)?'Your opening lead':'Your play';
+    if(G.turn===DEF.me) return (G.trickNo===1&&!G.trick.length)?'You are '+NAMES[DEF.me]+': your opening lead':'Your play ('+NAMES[DEF.me]+')';
     if(G.turn==='N') return 'Declarer plays from dummy';
     if(G.turn==='S') return 'Declarer to play';
     return 'Partner to play';
@@ -1356,6 +1362,13 @@ function render(){
   el.center.className=phase==='ready'?'ready':'';
   el.won.textContent=DEF?G.won.ew:G.won.ns; el.lost.textContent=DEF?G.won.ns:G.won.ew; el.need.textContent=DEF?14-HAND.need:HAND.need;
   el.status.textContent=statusText();
+  $('stitle').textContent=DEF?'Defence Challenge':'Declarer Challenge';
+  var lt=$('lastTrick');
+  if(DEF&&G.prevTrick&&phase==='play'){
+    lt.hidden=false;
+    lt.innerHTML='<b>Last trick:</b> '+G.prevTrick.cards.map(function(p){return (p.seat===DEF.me?'You':p.seat==='N'?'Dummy':p.seat==='S'?'Declarer':'Partner')+' '+rankLabel(p.card.r)+suitHtml(p.card.s);}).join(', ')+
+      '. '+(G.prevTrick.winner===DEF.me?'You':G.prevTrick.winner==='N'?'Dummy':G.prevTrick.winner==='S'?'Declarer':'Partner')+' won.';
+  } else lt.hidden=true;
   $('demoCtl').hidden=!(mode==='demo'&&phase==='play');
   $('dPause').textContent=demoPaused?'Resume':'Pause';
   el.undo.hidden=!(mode==='practice'&&phase!=='ready');
