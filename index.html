@@ -281,7 +281,7 @@ html.bix .card .ix.r{color:#c1272d}
           <div class="acts">
             <button class="btn primary" id="startChallenge">Start</button>
           </div>
-          <div class="cap">Timed and scored, with no undo. You can practise the hand once you have finished it.</div>
+          <div class="cap" id="readyCap">Timed and scored, with no undo. You can practise the hand once you have finished it.</div>
         </div>
       </div>
       <div class="seat" id="seatE"></div>
@@ -490,7 +490,7 @@ var NAMES={N:'North',E:'East',S:'South',W:'West'};
 var RNAME={11:'J',12:'Q',13:'K',14:'A'};
 
 /* Game rules */
-var BUILD='2026-10-11 h';       // shown in Settings so you can tell which version a phone is running
+var BUILD='2026-10-11 j';       // shown in Settings so you can tell which version a phone is running
 var GATE_URL='';               // NOT YET LIVE: once the bridgescorer.com sign-up gate page exists, set its URL here and challenge links will route through it first, instead of straight into the app as they do now.
 var RESULTS_URL='https://script.google.com/macros/s/AKfycbzQ3emQW0yoTcjrUt6OaGjP9EeiUFtx-AoohDgiu1wkqCNwYdeenqMKbPPNAUkHJd-Z9Q/exec'; // LIVE
 var MAX_ATT=3;
@@ -524,8 +524,9 @@ function viewPos(seat){                          // screen position, as at the t
   return ['s','w','n','e'][off];
 }
 function whoName(seat){ return seat===DEF.me?'You':seat==='N'?'Dummy':seat==='S'?'Declarer':'Partner'; }
+function defBackH(){ return clamp(Math.round((el.felt.clientHeight||600)*.1),34,88); }   // short side of a card back in defence (declarer and partner match)
 function renderPartnerTop(){
-  var p=partnerOf(DEF.me),n=G.hands[p].length,bh=34,bw=Math.round(bh*.72),backs='';
+  var p=partnerOf(DEF.me),n=G.hands[p].length,bw=defBackH(),bh=Math.round(bw/.68),backs='';
   for(var i=0;i<n;i++) backs+='<div class="cb" style="--bw:'+bw+'px;--bh:'+bh+'px'+(i?';margin-left:'+Math.round(-bw*.55)+'px':'')+'"></div>';
   el.north.innerHTML='<div class="seat'+(G.turn===p?' turn':'')+'" style="flex-direction:row;gap:12px;align-items:center;padding-bottom:4px"><div class="who">Partner ('+NAMES[p]+')</div><div style="display:flex">'+backs+'</div></div>';
   el.north.classList.remove('blur');
@@ -1027,6 +1028,7 @@ function loadDefHand(id){
   var leadTxt=HAND.me==='W'?'You are West: you make the opening lead.':'You are East. Partner leads the '+rankLabel(rankVal(HAND.lead[1]))+suitHtml(HAND.lead[0])+'.';
   $('readyLine').innerHTML='Defence hand '+defNo(id)+' of '+defIds().length+' <span style="opacity:.7">(preview)</span><br><span class="contract">'+contractHtml()+' by South</span> '+leadTxt;
   renderAuction(); $('incoming').hidden=true;
+  $('readyCap').textContent='Preview: not scored yet. Dummy goes down after the opening lead; you can undo from the menu.';
 }
 function readyDefHand(id){
   token++; running=false; phase='ready'; mode='practice';
@@ -1094,7 +1096,7 @@ function renderIncoming(id){
   } else box.hidden=true;
 }
 function loadHand(id){
-  DEF=null; HAND=HANDS[id];
+  DEF=null; HAND=HANDS[id]; $('readyCap').textContent='Timed and scored, with no undo. You can practise the hand once you have finished it.';
   var sid=setStart(id),pos=id-sid,att=Math.min(attemptsUsed(id)+1,MAX_ATT);
   $('hNo').textContent=HAND.id;
   el.badge.innerHTML=contractHtml()+' by South';
@@ -1324,6 +1326,7 @@ function backSize(midH){var bh=clamp(midH-70,30,88);return {bw:Math.round(bh/.68
 function renderSeat(seat,midH){
   var host=viewPos(seat)==='w'?el.seatW:el.seatE,n=G.hands[seat].length;
   var bs=backSize(midH),bw=bs.bw,bh=bs.bh;
+  if(DEF){ bh=defBackH(); bw=Math.round(bh/.68); }
   var off=clamp(Math.floor((midH-30-bh)/12),3,30);
   var strips='';
   for(var i=0;i<n;i++) strips+='<div class="cb" style="'+(i?'margin-top:'+(off-bh)+'px':'')+'"></div>';
@@ -1386,7 +1389,7 @@ function statusText(){
 function render(){
   if(!G) return;
   if(DEF) activeHand='S'; else if(phase==='play'&&(G.turn==='N'||G.turn==='S')) activeHand=G.turn;
-  var nh=DEF?50:(activeHand==='N'?bigH:smallH)+PAD, sh=(activeHand==='S'?bigH:smallH)+PAD;
+  var nh=DEF?Math.round(defBackH()/.68)+14:(activeHand==='N'?bigH:smallH)+PAD, sh=(activeHand==='S'?bigH:smallH)+PAD;
   el.felt.style.setProperty('--nh',nh+'px'); el.felt.style.setProperty('--sh',sh+'px');
   var midH=el.felt.clientHeight-nh-sh;
   if(DEF){ renderPartnerTop(); renderHand(DEF.me); renderDummySide(midH); renderSeat('S',midH); }
