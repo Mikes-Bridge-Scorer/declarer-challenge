@@ -4,6 +4,10 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0b3a2a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Declarer">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon-192.png" type="image/png">
 <link rel="apple-touch-icon" href="icon-192.png">
@@ -105,6 +109,7 @@ body{background:var(--bg);color:var(--panel-ink);font-family:-apple-system,"Sego
 .mbtn small{font-weight:500;opacity:.7;font-size:11px}
 #menuBtn{display:none}
 .mbtn:focus-visible,.btn:focus-visible,.card:focus-visible,a.btn:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
+#aucBtn{display:none}
 @media (max-width:900px),(max-height:520px){
   :root{--sidew:160px}
   #auction{padding:5px 4px}
@@ -113,8 +118,13 @@ body{background:var(--bg);color:var(--panel-ink);font-family:-apple-system,"Sego
   #side{padding:8px 10px;gap:6px}
   .stitle{display:none}
   .contract{font-size:15px;padding:1px 8px}
-  .hud .r2{font-size:12px;padding:2px 0}
-  #status{font-size:12px;margin-top:6px}
+  .hud .r2{font-size:14px;padding:2px 0}
+  .hud .r2 b{font-size:16px}
+  #status{font-size:16px;margin-top:6px;line-height:1.25}
+  #aucBtn{display:none}
+  #side.inplay #auction{display:none}
+  #side.inplay #aucBtn{display:flex}
+  #side.inplay.aucopen #auction{display:block}
   #menuBtn{display:flex;margin-top:auto;min-height:36px;width:calc(100% - 44px)}
   #quitBtn{top:auto;bottom:8px;right:10px}
   #menu{display:none;margin-top:0}
@@ -293,6 +303,7 @@ html.bix .card .ix.r{color:#c1272d}
     <button id="quitBtn" aria-label="Quit"><svg viewBox="0 0 24 24"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg></button>
     <div class="stitle" id="stitle">Declarer Challenge</div>
     <div id="auction" aria-label="Auction"></div>
+    <button class="btn" id="aucBtn" style="min-height:34px;font-size:14px">Auction</button>
     <div class="hud">
       <div class="contract" id="contractBadge"></div>
       <div class="r2"><span>Hand</span><b id="hNo"></b></div>
@@ -490,7 +501,7 @@ var NAMES={N:'North',E:'East',S:'South',W:'West'};
 var RNAME={11:'J',12:'Q',13:'K',14:'A'};
 
 /* Game rules */
-var BUILD='2026-10-11 j';       // shown in Settings so you can tell which version a phone is running
+var BUILD='2026-10-11 k';       // shown in Settings so you can tell which version a phone is running
 var GATE_URL='';               // NOT YET LIVE: once the bridgescorer.com sign-up gate page exists, set its URL here and challenge links will route through it first, instead of straight into the app as they do now.
 var RESULTS_URL='https://script.google.com/macros/s/AKfycbzQ3emQW0yoTcjrUt6OaGjP9EeiUFtx-AoohDgiu1wkqCNwYdeenqMKbPPNAUkHJd-Z9Q/exec'; // LIVE
 var MAX_ATT=3;
@@ -1327,6 +1338,7 @@ function renderSeat(seat,midH){
   var host=viewPos(seat)==='w'?el.seatW:el.seatE,n=G.hands[seat].length;
   var bs=backSize(midH),bw=bs.bw,bh=bs.bh;
   if(DEF){ bh=defBackH(); bw=Math.round(bh/.68); }
+  else { var cmp=false; try{cmp=window.matchMedia('(max-width:900px),(max-height:520px)').matches;}catch(e){} if(cmp&&bh>52){ bh=52; bw=Math.round(bh/.68); } }
   var off=clamp(Math.floor((midH-30-bh)/12),3,30);
   var strips='';
   for(var i=0;i<n;i++) strips+='<div class="cb" style="'+(i?'margin-top:'+(off-bh)+'px':'')+'"></div>';
@@ -1398,6 +1410,8 @@ function render(){
   el.center.className=phase==='ready'?'ready':'';
   el.won.textContent=DEF?G.won.ew:G.won.ns; el.lost.textContent=DEF?G.won.ns:G.won.ew; el.need.textContent=DEF?14-HAND.need:HAND.need;
   el.status.textContent=statusText();
+  var sd=$('side'); sd.classList.toggle('inplay',phase==='play'); if(phase!=='play') sd.classList.remove('aucopen');
+  $('aucBtn').textContent=sd.classList.contains('aucopen')?'Hide auction':'Auction';
   $('stitle').textContent=DEF?'Defence Challenge':'Declarer Challenge';
   var lt=$('lastTrick');
   if(DEF&&G.prevTrick&&phase==='play'){
@@ -1601,6 +1615,7 @@ $('mRestart').onclick=leaveHand;
 $('mHome').onclick=goHome;
 $('mHands').onclick=function(){ showHands(); };
 $('mDef').onclick=function(){ showDefList(); };
+$('aucBtn').onclick=function(){ $('side').classList.toggle('aucopen'); render(); };
 if(!DEF_ON) $('mDef').hidden=true;
 $('mHelp').onclick=showIntro;
 $('mReport').onclick=function(){
