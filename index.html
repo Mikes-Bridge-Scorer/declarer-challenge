@@ -490,7 +490,7 @@ var NAMES={N:'North',E:'East',S:'South',W:'West'};
 var RNAME={11:'J',12:'Q',13:'K',14:'A'};
 
 /* Game rules */
-var BUILD='2026-10-11 d';       // shown in Settings so you can tell which version a phone is running
+var BUILD='2026-10-11 e';       // shown in Settings so you can tell which version a phone is running
 var GATE_URL='';               // NOT YET LIVE: once the bridgescorer.com sign-up gate page exists, set its URL here and challenge links will route through it first, instead of straight into the app as they do now.
 var RESULTS_URL='https://script.google.com/macros/s/AKfycbzQ3emQW0yoTcjrUt6OaGjP9EeiUFtx-AoohDgiu1wkqCNwYdeenqMKbPPNAUkHJd-Z9Q/exec'; // LIVE
 var MAX_ATT=3;
@@ -518,10 +518,33 @@ var DEF_ON=(function(){ try{ var m=location.search.match(/[?&]defence=([01])/); 
 function isHuman(s){ return DEF? s===DEF.me : (s==='N'||s==='S'); }
 function bottomSeat(){ return DEF?DEF.me:'S'; }
 function partnerOf(s){ return {N:'S',S:'N',E:'W',W:'E'}[s]; }
-function viewPos(seat){                          // screen position: dummy on top, you at the bottom, partner left, declarer right
+function viewPos(seat){                          // screen position, as at the table: you at the bottom, left-hand opponent on the left, partner opposite
   if(!DEF) return seat.toLowerCase();
-  if(seat==='N') return 'n'; if(seat===DEF.me) return 's';
-  return seat===partnerOf(DEF.me)?'w':'e';
+  var off=(SEATS.indexOf(seat)-SEATS.indexOf(DEF.me)+4)%4;
+  return ['s','w','n','e'][off];
+}
+function whoName(seat){ return seat===DEF.me?'You':seat==='N'?'Dummy':seat==='S'?'Declarer':'Partner'; }
+function renderPartnerTop(){
+  var p=partnerOf(DEF.me),n=G.hands[p].length,bh=34,bw=Math.round(bh*.72),backs='';
+  for(var i=0;i<n;i++) backs+='<div class="cb" style="--bw:'+bw+'px;--bh:'+bh+'px'+(i?';margin-left:'+Math.round(-bw*.55)+'px':'')+'"></div>';
+  el.north.innerHTML='<div class="seat'+(G.turn===p?' turn':'')+'" style="flex-direction:row;gap:12px;align-items:center;padding-bottom:4px"><div class="who">Partner ('+NAMES[p]+')</div><div style="display:flex">'+backs+'</div></div>';
+  el.north.classList.remove('blur');
+}
+function renderDummySide(midH){
+  var host=viewPos('N')==='w'?el.seatW:el.seatE;
+  host.className='seat'+(G.turn==='N'?' turn':'');
+  var label='<div class="who">Dummy (North)</div>';
+  if(G.trickNo===1&&!G.trick.length){ host.innerHTML=label+'<div style="max-width:150px;text-align:center;font-weight:400;padding:8px 4px">Dummy goes down after the opening lead.</div>'; return; }
+  /* one column per suit, cards overlapping downwards so each card's corner shows */
+  var order=suitDisplayOrder(), L=1; order.forEach(function(su){ L=Math.max(L,G.hands.N.filter(function(c){return c.s===su;}).length); });
+  var avail=Math.max(60,midH-36), maxW=Math.max(160,el.felt.clientWidth*.32);
+  var ch=Math.floor(Math.min(150, avail/(1+(L-1)*.27), (maxW-18)/4/.7)), cw=Math.round(ch*.7), step=Math.round(ch*.27);
+  var rows=order.map(function(su){
+    var g=G.hands.N.filter(function(c){return c.s===su;});
+    if(!g.length) return '<div style="width:'+cw+'px;text-align:center;font-size:15px;padding-top:6px">'+suitHtml(su)+'<br>&mdash;</div>';
+    return '<div style="display:flex;flex-direction:column;width:'+cw+'px">'+g.map(function(c,i){return '<div style="'+(i?'margin-top:'+(step-ch)+'px':'')+'">'+cardHtml(c,cw,ch,'',0,null,false)+'</div>';}).join('')+'</div>';
+  }).join('');
+  host.innerHTML=label+'<div style="display:flex;gap:6px;align-items:flex-start">'+rows+'</div>';
 }
 function defNo(id){ return id-500; }
 function defIds(){ return Object.keys(DHANDS).map(Number).sort(function(a,b){return a-b;}); }
@@ -1354,11 +1377,11 @@ function statusText(){
 function render(){
   if(!G) return;
   if(DEF) activeHand='S'; else if(phase==='play'&&(G.turn==='N'||G.turn==='S')) activeHand=G.turn;
-  var nh=(activeHand==='N'?bigH:smallH)+PAD, sh=(activeHand==='S'?bigH:smallH)+PAD;
+  var nh=DEF?50:(activeHand==='N'?bigH:smallH)+PAD, sh=(activeHand==='S'?bigH:smallH)+PAD;
   el.felt.style.setProperty('--nh',nh+'px'); el.felt.style.setProperty('--sh',sh+'px');
   var midH=el.felt.clientHeight-nh-sh;
-  renderHand('N'); renderHand(bottomSeat());
-  ['W','E','S'].filter(function(x){return x!==bottomSeat();}).forEach(function(x){ renderSeat(x,midH); });
+  if(DEF){ renderPartnerTop(); renderHand(DEF.me); renderDummySide(midH); renderSeat('S',midH); }
+  else { renderHand('N'); renderHand('S'); renderSeat('W',midH); renderSeat('E',midH); }
   renderTrick();
   el.center.className=phase==='ready'?'ready':'';
   el.won.textContent=DEF?G.won.ew:G.won.ns; el.lost.textContent=DEF?G.won.ns:G.won.ew; el.need.textContent=DEF?14-HAND.need:HAND.need;
@@ -1367,8 +1390,7 @@ function render(){
   var lt=$('lastTrick');
   if(DEF&&G.prevTrick&&phase==='play'){
     lt.hidden=false;
-    lt.innerHTML='<b>Last trick:</b> '+G.prevTrick.cards.map(function(p){return (p.seat===DEF.me?'You':p.seat==='N'?'Dummy':p.seat==='S'?'Declarer':'Partner')+' '+rankLabel(p.card.r)+suitHtml(p.card.s);}).join(', ')+
-      '. '+(G.prevTrick.winner===DEF.me?'You':G.prevTrick.winner==='N'?'Dummy':G.prevTrick.winner==='S'?'Declarer':'Partner')+' won.';
+    lt.innerHTML='<b>Last trick:</b> '+G.prevTrick.cards.map(function(p){return whoName(p.seat)+' '+rankLabel(p.card.r)+suitHtml(p.card.s);}).join(', ')+'. '+whoName(G.prevTrick.winner)+' won.';
   } else lt.hidden=true;
   $('demoCtl').hidden=!(mode==='demo'&&phase==='play');
   $('dPause').textContent=demoPaused?'Resume':'Pause';
