@@ -490,7 +490,7 @@ var NAMES={N:'North',E:'East',S:'South',W:'West'};
 var RNAME={11:'J',12:'Q',13:'K',14:'A'};
 
 /* Game rules */
-var BUILD='2026-10-11 c';       // shown in Settings so you can tell which version a phone is running
+var BUILD='2026-10-11 d';       // shown in Settings so you can tell which version a phone is running
 var GATE_URL='';               // NOT YET LIVE: once the bridgescorer.com sign-up gate page exists, set its URL here and challenge links will route through it first, instead of straight into the app as they do now.
 var RESULTS_URL='https://script.google.com/macros/s/AKfycbzQ3emQW0yoTcjrUt6OaGjP9EeiUFtx-AoohDgiu1wkqCNwYdeenqMKbPPNAUkHJd-Z9Q/exec'; // LIVE
 var MAX_ATT=3;
@@ -652,7 +652,7 @@ function doPlay(seat,card){
     G.turn=null; G.lastWinner=winnerOf(G.trick).seat;
     var tok=token;
     var fn=function(){ if(tok!==token||!pending) return; clearTimeout(pending.id); pending=null; resolveTrick(); };
-    pending={fn:fn}; pending.id=setTimeout(fn,DEF?1800:1150);
+    pending={fn:fn}; pending.id=setTimeout(fn,DEF?2600:1150);
     render();
   } else {
     G.turn=nextSeat(seat); render(); advance();
@@ -674,7 +674,7 @@ function advance(){
   setTimeout(function(){
     if(tok!==token||phase!=='play'||G.turn!==t) return;
     doPlay(t,(DEF&&(t==='N'||t==='S'))?declPlay(t):aiPlay(t));
-  }, DEF?(first?700:1100):(first?450:650));
+  }, DEF?(first?900:1600):(first?450:650));
 }
 function onCardTap(id,seat){
   if(!canAct()||G.turn!==seat) return;
@@ -1282,7 +1282,8 @@ function renderHand(seat){
   var sliver=Math.max(12,Math.min(cw+6,fit(cw)));
   var mine=canAct()&&G.turn===seat;
   var legal={}; if(mine) legalCards(seat).forEach(function(c){legal[c.id]=1;});
-  var html='<div class="tag">'+(seat==='N'?'Dummy (North)':(DEF?'You ('+NAMES[seat]+')':'You (South)'))+'</div><div class="row">';
+  var html=(DEF&&seat!=='N'?'<div class="tag" style="left:50%;top:-30px;transform:translateX(-50%);background:rgba(0,0,0,.35);padding:2px 14px;border-radius:12px;white-space:nowrap">You ('+NAMES[seat]+')</div>':
+    '<div class="tag">'+(seat==='N'?'Dummy (North)':'You (South)')+'</div>')+'<div class="row">';
   if(DEF&&seat==='N'&&G.trickNo===1&&!G.trick.length){ host.innerHTML='<div class="tag">Dummy (North)</div><div class="row" style="font-size:15px;padding:10px 4px;color:#fff">Dummy goes down after the opening lead.</div>'; host.classList.toggle('blur',phase==='ready'); return; }
   groups.forEach(function(g,gi){
     html+='<div class="grp" style="margin-left:'+(gi?gap:0)+'px">';
