@@ -490,7 +490,7 @@ var NAMES={N:'North',E:'East',S:'South',W:'West'};
 var RNAME={11:'J',12:'Q',13:'K',14:'A'};
 
 /* Game rules */
-var BUILD='2026-10-11 e';       // shown in Settings so you can tell which version a phone is running
+var BUILD='2026-10-11 h';       // shown in Settings so you can tell which version a phone is running
 var GATE_URL='';               // NOT YET LIVE: once the bridgescorer.com sign-up gate page exists, set its URL here and challenge links will route through it first, instead of straight into the app as they do now.
 var RESULTS_URL='https://script.google.com/macros/s/AKfycbzQ3emQW0yoTcjrUt6OaGjP9EeiUFtx-AoohDgiu1wkqCNwYdeenqMKbPPNAUkHJd-Z9Q/exec'; // LIVE
 var MAX_ATT=3;
@@ -535,16 +535,16 @@ function renderDummySide(midH){
   host.className='seat'+(G.turn==='N'?' turn':'');
   var label='<div class="who">Dummy (North)</div>';
   if(G.trickNo===1&&!G.trick.length){ host.innerHTML=label+'<div style="max-width:150px;text-align:center;font-weight:400;padding:8px 4px">Dummy goes down after the opening lead.</div>'; return; }
-  /* one column per suit, cards overlapping downwards so each card's corner shows */
-  var order=suitDisplayOrder(), L=1; order.forEach(function(su){ L=Math.max(L,G.hands.N.filter(function(c){return c.s===su;}).length); });
-  var avail=Math.max(60,midH-36), maxW=Math.max(160,el.felt.clientWidth*.32);
-  var ch=Math.floor(Math.min(150, avail/(1+(L-1)*.27), (maxW-18)/4/.7)), cw=Math.round(ch*.7), step=Math.round(ch*.27);
-  var rows=order.map(function(su){
+  /* one row per suit, trumps first; rows overlap downwards so every card's corner shows (as in desktop bridge programs) */
+  var order=suitDisplayOrder().filter(function(su){return G.hands.N.some(function(c){return c.s===su;});}), L=1, R=Math.max(1,order.length);
+  order.forEach(function(su){ L=Math.max(L,G.hands.N.filter(function(c){return c.s===su;}).length); });
+  var avail=Math.max(60,midH-36), maxW=Math.max(170,el.felt.clientWidth*.3);
+  var ch=Math.floor(Math.min(200, avail/(1+(R-1)*.34), maxW/(.7*(1+(L-1)*.32)))), cw=Math.round(ch*.7), sx=Math.round(cw*.32), sy=Math.round(ch*.34);
+  var rows=order.map(function(su,ri){
     var g=G.hands.N.filter(function(c){return c.s===su;});
-    if(!g.length) return '<div style="width:'+cw+'px;text-align:center;font-size:15px;padding-top:6px">'+suitHtml(su)+'<br>&mdash;</div>';
-    return '<div style="display:flex;flex-direction:column;width:'+cw+'px">'+g.map(function(c,i){return '<div style="'+(i?'margin-top:'+(step-ch)+'px':'')+'">'+cardHtml(c,cw,ch,'',0,null,false)+'</div>';}).join('')+'</div>';
+    return '<div style="display:flex;position:relative;z-index:'+(ri+1)+(ri?';margin-top:'+(sy-ch)+'px':'')+'">'+g.map(function(c,i){return cardHtml(c,cw,ch,'',i?sx-cw:0,null,false);}).join('')+'</div>';
   }).join('');
-  host.innerHTML=label+'<div style="display:flex;gap:6px;align-items:flex-start">'+rows+'</div>';
+  host.innerHTML=label+'<div style="display:flex;flex-direction:column;align-items:flex-start">'+rows+'</div>';
 }
 function defNo(id){ return id-500; }
 function defIds(){ return Object.keys(DHANDS).map(Number).sort(function(a,b){return a-b;}); }
@@ -697,7 +697,7 @@ function advance(){
   setTimeout(function(){
     if(tok!==token||phase!=='play'||G.turn!==t) return;
     doPlay(t,(DEF&&(t==='N'||t==='S'))?declPlay(t):aiPlay(t));
-  }, DEF?(first?900:1600):(first?450:650));
+  }, DEF?(first?(DEF.me==='E'?2800:900):1600):(first?450:650));
 }
 function onCardTap(id,seat){
   if(!canAct()||G.turn!==seat) return;
@@ -1331,14 +1331,23 @@ function renderSeat(seat,midH){
   host.innerHTML='<div class="who">'+(DEF?(seat==='S'?'Declarer (South)':'Partner ('+NAMES[seat]+')'):NAMES[seat])+'</div><div class="stack" style="--bw:'+bw+'px;--bh:'+bh+'px" aria-label="'+NAMES[seat]+' holds '+n+' cards">'+strips+'</div>';
 }
 function renderTrick(){
+  /* defence: give the trick more room so four labelled cards never overlap */
+  var TW=tw,TH=th,tb=el.trick.style;
+  if(DEF){ var mh=$('mid').clientHeight||300; TH=Math.max(40,Math.min(th,Math.floor((mh-60)/2.25))); TW=Math.round(TH*.7);
+    tb.setProperty('--tw',TW+'px'); tb.setProperty('--th',TH+'px'); tb.height=(TH*2.2+44)+'px'; tb.width=(TW*4.2)+'px'; tb.zIndex='5'; }
+  else { tb.removeProperty('--tw'); tb.removeProperty('--th'); tb.height=''; tb.width=''; tb.zIndex=''; }
   var slots={N:'',E:'',S:'',W:''},z={};
   G.trick.forEach(function(p,i){
     var vp=viewPos(p.seat).toUpperCase(); z[vp]=i+1;
     var cls=(i===G.trick.length-1&&!pending?'new':'')+(G.lastWinner===p.seat?' win':'');
-    slots[vp]=cardHtml(p.card,tw,th,cls.trim(),0,null,false);
+    slots[vp]=cardHtml(p.card,TW,TH,cls.trim(),0,null,false);
+    if(DEF) slots[vp]='<div style="display:flex;flex-direction:column;align-items:center;gap:2px">'+'<span style="font-size:12px;font-weight:700;color:#fff;background:rgba(0,0,0,.4);padding:0 7px;border-radius:8px;white-space:nowrap">'+whoName(p.seat)+'</span>'+slots[vp]+'</div>';
   });
-  if(DEF&&phase==='play'&&mode!=='demo'&&G.trickNo===1&&!G.trick.length&&G.turn===DEF.me){
-    el.trick.innerHTML='<div style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,.35);color:#fff;padding:10px 16px;border-radius:10px;font-size:18px;font-weight:600;white-space:nowrap">You are '+NAMES[DEF.me]+'. Choose your opening lead.</div>';
+  if(DEF&&phase==='play'&&G.trickNo===1&&!G.trick.length){
+    var msg=G.turn===DEF.me?'You are '+NAMES[DEF.me]+'. Choose your opening lead.':
+      'You are '+NAMES[DEF.me]+'. Partner leads the '+rankLabel(rankVal(HAND.lead[1]))+suitHtml(HAND.lead[0])+'.';
+    if(G.turn===DEF.me&&mode==='demo') msg='You are '+NAMES[DEF.me]+'. Watch the opening lead.';
+    el.trick.innerHTML='<div style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,.45);color:#fff;padding:10px 16px;border-radius:10px;font-size:18px;font-weight:600;white-space:nowrap">'+msg+'</div>';
     return;
   }
   el.trick.innerHTML=['n','w','e','s'].map(function(k){return '<div class="slot '+k+'" style="z-index:'+(z[k.toUpperCase()]||0)+'">'+slots[k.toUpperCase()]+'</div>';}).join('');
