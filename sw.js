@@ -1,9 +1,9 @@
 /* Declarer Challenge service worker. Relative paths, so it works in any folder.
    The app shell (index.html / '/') is always fetched fresh from the network first, falling back
    to the cached copy only when offline — so a new build shows up the very next time the app is
-   opened, instead of one launch late. Icons/manifest rarely change, so those stay cache-first
+   opened, instead of one launch late. hands.json is handled the same way. Icons/manifest rarely change, so those stay cache-first
    for speed, refreshed quietly in the background. */
-var CACHE='declarer-challenge-v4';
+var CACHE='declarer-challenge-v5';
 var FILES=['./','./index.html','./manifest.webmanifest','./icon-192.png','./icon-512.png','./icon-maskable-512.png'];
 self.addEventListener('install',function(e){
   e.waitUntil(caches.open(CACHE).then(function(c){
@@ -20,7 +20,8 @@ self.addEventListener('fetch',function(e){
   var u=new URL(req.url);
   if(u.origin!==location.origin) return;
   var key=new Request(u.origin+u.pathname);   /* ignore ?set=..&n=..&s=..&t=.. so challenge links open offline */
-  var isShell = req.mode==='navigate' || u.pathname==='/' || /\/$/.test(u.pathname) || /index\.html$/.test(u.pathname);
+  /* hands.json (the hand list) is treated like the app itself: newest copy first, cached copy when offline */
+  var isShell = req.mode==='navigate' || u.pathname==='/' || /\/$/.test(u.pathname) || /index\.html$/.test(u.pathname) || /\.json$/.test(u.pathname);
 
   if(isShell){
     /* network-first: always try to get the latest build; only use the cache when offline */
