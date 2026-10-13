@@ -502,7 +502,7 @@ var NAMES={N:'North',E:'East',S:'South',W:'West'};
 var RNAME={11:'J',12:'Q',13:'K',14:'A'};
 
 /* Game rules */
-var BUILD='2026-10-12 c';       // shown in Settings so you can tell which version a phone is running
+var BUILD='2026-10-13 a';       // shown in Settings so you can tell which version a phone is running
 var GATE_URL='';               // NOT YET LIVE: once the bridgescorer.com sign-up gate page exists, set its URL here and challenge links will route through it first, instead of straight into the app as they do now.
 var RESULTS_URL='https://script.google.com/macros/s/AKfycbzQ3emQW0yoTcjrUt6OaGjP9EeiUFtx-AoohDgiu1wkqCNwYdeenqMKbPPNAUkHJd-Z9Q/exec'; // LIVE
 var MAX_ATT=3;
@@ -1280,7 +1280,7 @@ var ladderSid=null;
 function fetchLadder(sid,cb){
   if(!RESULTS_URL){ cb({status:'off'}); return; }
   if(!navigator.onLine){ cb({status:'offline'}); return; }
-  var url=RESULTS_URL+'?action=dcLadder&set='+sid+(isDefId(sid)?'&kind=def':'');
+  var pl=getPlayer(), url=RESULTS_URL+'?action=dcLadder&set='+sid+(isDefId(sid)?'&kind=def':'')+(pl&&pl.email?'&email='+encodeURIComponent(pl.email):'');
   fetch(url).then(function(r){ return r.json(); }).then(function(data){ cb(data); }).catch(function(){ cb({status:'error'}); });
 }
 function showLadder(sid){
@@ -1302,7 +1302,7 @@ function showLadder(sid){
     var p=getPlayer();
     var medal=['\uD83E\uDD47','\uD83E\uDD48','\uD83E\uDD49'];
     var tr=rows.map(function(r,i){
-      var mine=p&&r.email&&r.email===p.email;
+      var mine=!!r.mine||!!(p&&r.email&&r.email===p.email);
       var rankCell=i<3?medal[i]:(i+1);
       return '<tr'+(mine?' style="font-weight:700"':'')+'><td>'+rankCell+'</td><td>'+esc(ladderName(r.name))+(r.town?', '+esc(r.town):'')+'</td><td>'+r.points+'</td><td>'+fmtSec(r.secs)+'</td></tr>';
     }).join('');
