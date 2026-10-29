@@ -306,6 +306,7 @@ html.bix .card .ix.r{color:#c1272d}
   </main>
 
   <div id="lessonHint" role="status" hidden style="position:fixed;left:50%;transform:translateX(-50%);bottom:calc(14px + env(safe-area-inset-bottom,0px));z-index:60;max-width:min(560px,92vw);background:#fff8e6;color:#1d2533;border:2px solid #d6ad55;border-radius:10px;padding:12px 14px;box-shadow:0 6px 24px rgba(0,0,0,.35);font-size:16px;line-height:1.45"><b style="display:block;margin-bottom:4px">Hint</b><p style="margin:0 0 8px"></p><button id="hintClose" style="min-height:34px;font-size:14px;font-weight:700;padding:4px 16px;border:0;border-radius:8px;background:#0a1628;color:#fff;cursor:pointer">Close</button></div>
+<div id="lessonTrap" role="alertdialog" aria-labelledby="trapTitle" hidden style="position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:61;width:min(520px,92vw);background:#fff;color:#1d2533;border:3px solid #b42318;border-radius:12px;padding:14px 16px;box-shadow:0 10px 40px rgba(0,0,0,.5);font-size:17px;line-height:1.45"><b id="trapTitle" style="display:block;margin-bottom:6px;color:#b42318;font-size:18px">Think again</b><p style="margin:0 0 12px"></p><div style="display:flex;flex-wrap:wrap;gap:8px"><button id="trapBack" style="min-height:40px;font-size:15px;font-weight:700;padding:6px 16px;border:0;border-radius:8px;background:#0a1628;color:#fff;cursor:pointer">Take it back</button><button id="trapGo" style="min-height:40px;font-size:15px;font-weight:700;padding:6px 16px;border:1px solid #9aa3b2;border-radius:8px;background:#fff;color:#1d2533;cursor:pointer">Play it anyway</button></div></div>
   <aside id="side">
     <button id="quitBtn" aria-label="Quit"><svg viewBox="0 0 24 24"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg></button>
     <div class="stitle" id="stitle">Declarer Challenge</div>
@@ -521,7 +522,7 @@ var DFIRST_ID=501, DLAST_ID=506, DFREE_MAX=506;   // defence: 501-503 is Defence
 var HANDS_REV='2026-10-27 a';   // rev of the hands built into this file (NOT the build name); any hands.json at least this new replaces them
 var PACK_REV='', allPlayed=false;
 /* Lesson hands (Learn page): ids 81-99, outside every challenge; played as practice only. */
-var LESSONS={"1":{"id":81,"dealer":"S","vul":"None","deal":{"N":"94.K63.KQJT5.762","E":"T53.T742.A94.Q83","S":"A62.AJ5.732.AKJ4","W":"KQJ87.Q98.86.T95"},"trump":"N","level":3,"need":9,"lead":"SK","auction":["1N","Pass","3N","Pass","Pass","Pass"],"sol":["S4","S2","S9","S6","C2","SA","HA","H3","CA","C6","D7","DT","H5","HK","DK","D2","DQ","D3","DJ","C4","C7","CJ","CK","D5","HJ","H6"],"pbp":["Trick 1: West K♠, North 4♠, East 3♠, South 2♠. West wins.","Trick 2: West Q♠, North 9♠, East 5♠, South 6♠. West wins.","Trick 3: West J♠, North 2♣, East 10♠, South A♠. South wins.","Trick 4: South A♥, West 8♥, North 3♥, East 2♥. South wins.","Trick 5: South A♣, West 5♣, North 6♣, East 3♣. South wins.","Trick 6: South 7♦, West 6♦, North 10♦, East A♦. East wins.","Trick 7: East 4♥, South 5♥, West Q♥, North K♥. North wins.","Trick 8: North K♦, East 4♦, South 2♦, West 8♦. North wins.","Trick 9: North Q♦, East 9♦, South 3♦, West 7♠. North wins.","Trick 10: North J♦, East 7♥, South 4♣, West 8♠. North wins.","Trick 11: North 7♣, East 8♣, South J♣, West 9♣. South wins.","Trick 12: South K♣, West 10♣, North 5♦, East Q♣. South wins.","Trick 13: South J♥, West 9♥, North 6♥, East 10♥. South wins."],"topic":"Hold-up play in no trumps","lesson":1,"why":["South opens 1NT with 17 points and North raises to 3NT with 9.","West leads the ♠K, top of a sequence. You have five top tricks and need four more from dummy's diamonds, but first you must knock out the ♦A. If East wins it and still has a spade to lead, West's suit runs.","Hold up: duck the first two spades and win the third, when East has none left. When East wins the ♦A he cannot reach his partner, and dummy's diamonds give you nine tricks.","Win the first or second spade, and East wins the ♦A and returns a spade: West cashes the rest of his suit and you go one down."],"title":"The hold-up","set":100,"hints":{"1":"Count East's spades before you win anything. If East gets in with the ♦A later, will he still have a spade to lead?","2":"East has followed to two spades. If he has one left and you win now, he can lead it when he takes the ♦A.","3":"Now is the time to win the ♠A: East has no spades left.","default":"You need four diamond tricks. Knock out the ♦A: East can win it, but he has no spade to lead back."}}}, LESSON=null;
+var LESSONS={"1":{"id":81,"dealer":"S","vul":"None","deal":{"N":"94.K63.KQJT5.762","E":"T53.T742.A94.Q83","S":"A62.AJ5.732.AKJ4","W":"KQJ87.Q98.86.T95"},"trump":"N","level":3,"need":9,"lead":"SK","auction":["1N","Pass","3N","Pass","Pass","Pass"],"sol":["S4","S2","S9","S6","C2","SA","HA","H3","CA","C6","D7","DT","H5","HK","DK","D2","DQ","D3","DJ","C4","C7","CJ","CK","D5","HJ","H6"],"pbp":["Trick 1: West K♠, North 4♠, East 3♠, South 2♠. West wins.","Trick 2: West Q♠, North 9♠, East 5♠, South 6♠. West wins.","Trick 3: West J♠, North 2♣, East 10♠, South A♠. South wins.","Trick 4: South A♥, West 8♥, North 3♥, East 2♥. South wins.","Trick 5: South A♣, West 5♣, North 6♣, East 3♣. South wins.","Trick 6: South 7♦, West 6♦, North 10♦, East A♦. East wins.","Trick 7: East 4♥, South 5♥, West Q♥, North K♥. North wins.","Trick 8: North K♦, East 4♦, South 2♦, West 8♦. North wins.","Trick 9: North Q♦, East 9♦, South 3♦, West 7♠. North wins.","Trick 10: North J♦, East 7♥, South 4♣, West 8♠. North wins.","Trick 11: North 7♣, East 8♣, South J♣, West 9♣. South wins.","Trick 12: South K♣, West 10♣, North 5♦, East Q♣. South wins.","Trick 13: South J♥, West 9♥, North 6♥, East 10♥. South wins."],"topic":"Hold-up play in no trumps","lesson":1,"why":["South opens 1NT with 17 points and North raises to 3NT with 9.","West leads the ♠K, top of a sequence. You have five top tricks and need four more from dummy's diamonds, but first you must knock out the ♦A. If East wins it and still has a spade to lead, West's suit runs.","Hold up: duck the first two spades and win the third, when East has none left. When East wins the ♦A he cannot reach his partner, and dummy's diamonds give you nine tricks.","Win the first or second spade, and East wins the ♦A and returns a spade: West cashes the rest of his suit and you go one down."],"title":"The hold-up","set":100,"hints":{"1":"Count East's spades before you win anything. If East gets in with the ♦A later, will he still have a spade to lead?","2":"East has followed to two spades. If he has one left and you win now, he can lead it when he takes the ♦A.","3":"Now is the time to win the ♠A: East has no spades left.","default":"You need four diamond tricks. Knock out the ♦A: East can win it, but he has no spade to lead back."},"traps":[{"t":1,"c":"SA","msg":"If you win the ♠A now, East still has two spades. When he wins the ♦A he will lead one, and West will cash the rest of his spades. Hold up: play a low spade and let West's king win."},{"t":2,"c":"SA","msg":"Not yet. East has followed to two spades and may still have one. If you win now, East leads it when he takes the ♦A, and West's spades run. Duck once more."}]}}, LESSON=null;
 function inLesson(){ return !!(LESSON&&HAND&&HAND.id===LESSON.id&&!DEF); }
 var LAST_ID=168;               // last hand in this build -- exactly 12 complete challenges of 3
 
@@ -757,6 +758,7 @@ function onCardTap(id,seat){
   var card=G.hands[seat].find(function(c){return c.id===id;});
   if(!card||!legalCards(seat).some(function(c){return c.id===id;})) return;
   if(confirmTap&&selected!==id){ selected=id; render(); return; }
+  if(inLesson()&&mode==='practice'&&lessonTrap(id,seat)) return;
   if(mode==='challenge'&&!G.counted){ G.counted=true; save('inprog',HAND.id); }
   G.history.push(snap()); doPlay(seat,card);
 }
@@ -1197,11 +1199,21 @@ function loadLesson(){
   $('hNo').textContent='Lesson '+LESSON.lesson;
   $('readyLine').innerHTML='Lesson '+LESSON.lesson+': '+esc(LESSON.title||LESSON.topic||'')+
     '<br><span class="contract">'+contractHtml()+' by South</span> West leads '+rankLabel(rankVal(HAND.lead[1]))+suitHtml(HAND.lead[0]);
-  $('readyCap').textContent='A practice hand: not timed or scored, and nothing goes on the ladder. Use Hint if you are stuck, and Undo (in the menu) to take back a card.';
+  $('readyCap').textContent='A practice hand: not timed or scored, and nothing goes on the ladder. If you play a card that loses the contract, you will be told why and can take it back. Use Hint if you are stuck.';
   var b=$('incoming'); b.hidden=false; b.textContent='From the Bridge at Sea Learn page';
   $('startChallenge').textContent='Start the lesson hand';
 }
 function lessonReady(){ token++; running=false; phase='ready'; mode='challenge'; el.clockRow.hidden=true; closeAll(); loadLesson(); newGame(); render(); }
+var trapPass='';
+function lessonTrap(id,seat){
+  var key=G.trickNo+':'+seat+':'+id; if(trapPass===key){ trapPass=''; return false; }
+  var tr=(LESSON.traps||[]).filter(function(x){ return x.t===G.trickNo&&x.c===id&&(x.s||'S')===seat; })[0];
+  if(!tr) return false;
+  var box=$('lessonTrap'); box.querySelector('p').textContent=tr.msg; box.hidden=false; $('lessonHint').hidden=true;
+  $('trapBack').onclick=function(){ box.hidden=true; selected=null; render(); };
+  $('trapGo').onclick=function(){ box.hidden=true; trapPass=key; onCardTap(id,seat); if(confirmTap&&trapPass===key) onCardTap(id,seat); };
+  return true;
+}
 function lessonHint(){
   if(!inLesson()) return;
   var hs=LESSON.hints||{}, t=G&&G.trickNo?G.trickNo:1, txt=hs[String(t)]||hs.default||'Go back to the plan: count your tricks, then ask what could go wrong.';
@@ -1531,7 +1543,7 @@ function render(){
   $('dPause').textContent=demoPaused?'Resume':'Pause';
   el.undo.hidden=!(mode==='practice'&&phase!=='ready');
   $('hintBtn').hidden=!(inLesson()&&mode==='practice'&&phase==='play');
-  if(!inLesson()||phase!=='play') $('lessonHint').hidden=true;
+  if(!inLesson()||phase!=='play'){ $('lessonHint').hidden=true; $('lessonTrap').hidden=true; }
   el.undo.disabled=!(mode==='practice'&&phase==='play'&&!pending&&G.history.length);
 }
 
