@@ -87,6 +87,7 @@ body{background:var(--bg);color:var(--panel-ink);font-family:-apple-system,"Sego
 .readybox .cap{font-size:12px;opacity:.8;margin-top:8px}
 .readybox .chal{font-size:13px;color:var(--brass);font-weight:600;margin-bottom:8px}
 #center.ready #trick{display:none}
+#center.ready{position:relative;z-index:5}
 #center.ready .readybox{display:block}
 
 /* ---- side panel ---- */
@@ -312,7 +313,7 @@ html.bix .card .ix.r{color:#c1272d}
     <div class="stitle" id="stitle">Declarer Challenge</div>
     <div id="auction" aria-label="Auction"></div>
     <button class="btn" id="aucBtn" style="min-height:34px;font-size:14px">Auction</button>
-    <button class="btn primary" id="hintBtn" style="min-height:34px;font-size:14px" hidden>Hint</button>
+    <div id="lessonBtns" style="display:none;gap:6px"><button class="btn primary" id="hintBtn" style="flex:1;min-height:34px;font-size:14px">Hint</button><button class="btn" id="takeBackBtn" style="flex:1;min-height:34px;font-size:14px">Take back</button></div>
     <div class="hud">
       <div class="contract" id="contractBadge"></div>
       <div class="r2"><span>Hand</span><b id="hNo"></b></div>
@@ -1072,9 +1073,9 @@ function startDemo(id){
 function showDemoEnd(){
   var t=G.won.ns,id=HAND.id,sid=setStart(id);
   $('resultPanel').innerHTML='<h2>'+esc(contractText())+' made: how it is done</h2><p>Declarer takes '+t+' tricks; the contract needed '+HAND.need+'.</p>'+
-    '<div class="acts"><button class="btn primary" id="demoBack">'+(inLesson()?'Play the lesson hand':setPending(sid)?'See your challenge score':'Next hand')+'</button>'+(HAND.pbp?'<button class="btn" id="demoWhy">Read the explanation</button>':'')+'<button class="btn" id="demoAgain">Watch again</button></div>';
+    '<div class="acts"><button class="btn primary" id="demoBack">'+(inLesson()?'Play the lesson hand':setPending(sid)?'See your challenge score':'Next hand')+'</button>'+(HAND.pbp?'<button class="btn" id="demoWhy">Read the explanation</button>':'')+'<button class="btn" id="demoAgain">Watch again</button>'+lessonExtraBtns()+'</div>';
   $('ovResult').classList.add('show');
-  $('demoAgain').onclick=function(){ startDemo(id); };
+  $('demoAgain').onclick=function(){ startDemo(id); }; wireLessonExtra();
   if($('demoWhy')) $('demoWhy').onclick=function(){ showWhy(id); };
   $('demoBack').onclick=function(){ if(setPending(sid)){ save('setSeen'+sid,'1'); closeAll(); showSet(sid); } else toReady(); };
 }
@@ -1213,6 +1214,16 @@ function lessonTrap(id,seat){
   $('trapBack').onclick=function(){ box.hidden=true; selected=null; render(); };
   $('trapGo').onclick=function(){ box.hidden=true; trapPass=key; onCardTap(id,seat); if(confirmTap&&trapPass===key) onCardTap(id,seat); };
   return true;
+}
+function lessonExtraBtns(){
+  if(!inLesson()) return '';
+  var nx=LESSONS[String(LESSON.lesson+1)];
+  return (nx?'<button class="btn" id="nextLessonBtn">Next lesson: '+esc(nx.title||('Lesson '+nx.lesson))+'</button>':'')+
+    (canGoBack()?'<button class="btn" id="backBtn">Back to the lesson</button>':'');
+}
+function wireLessonExtra(){
+  if($('nextLessonBtn')) $('nextLessonBtn').onclick=function(){ location.href=location.pathname+'?lesson='+(LESSON.lesson+1); };
+  if($('backBtn')) $('backBtn').onclick=lessonBack;
 }
 function lessonHint(){
   if(!inLesson()) return;
@@ -1547,7 +1558,8 @@ function render(){
   $('demoCtl').hidden=!(mode==='demo'&&phase==='play');
   $('dPause').textContent=demoPaused?'Resume':'Pause';
   el.undo.hidden=!(mode==='practice'&&phase!=='ready');
-  $('hintBtn').hidden=!(inLesson()&&mode==='practice'&&phase==='play');
+  $('lessonBtns').style.display=(inLesson()&&mode==='practice'&&phase==='play')?'flex':'none';
+  $('takeBackBtn').disabled=!(mode==='practice'&&phase==='play'&&!pending&&G.history.length);
   if(!inLesson()||phase!=='play'){ $('lessonHint').hidden=true; $('lessonTrap').hidden=true; }
   el.undo.disabled=!(mode==='practice'&&phase==='play'&&!pending&&G.history.length);
 }
@@ -1641,7 +1653,7 @@ function showResult(){
     left+='<p class="muted">Lesson hand: not scored.</p>';
     right+='<div class="acts"><button class="btn primary" id="realBtn">Try Challenge '+challengeNo(LESSON.set||FIRST_ID)+' for real</button>'+
       '<button class="btn" id="practiceBtn">Play it again</button>'+(HAND.sol?'<button class="btn" id="solBtn">Show me how it is done</button>':'')+
-      (HAND.why?'<button class="btn" id="whyBtn">Read the explanation</button>':'')+(canGoBack()?'<button class="btn" id="backBtn">Back to the lesson</button>':'')+'</div>';
+      (HAND.why?'<button class="btn" id="whyBtn">Read the explanation</button>':'')+lessonExtraBtns()+'</div>';
   } else {
     left+='<p class="muted">Practice is not scored.</p>';
     right+='<div class="acts"><button class="btn primary" id="againBtn">Back to the challenge</button><button class="btn" id="practiceBtn">Practise again</button>'+((isDone(id)&&HAND.sol)?'<button class="btn" id="solBtn">Show me how it is done</button>':'')+((isDone(id)&&HAND.pbp)?'<button class="btn" id="whyBtn">Read the explanation</button>':'')+'</div>';
@@ -1653,7 +1665,7 @@ function showResult(){
   if($('solBtn')) $('solBtn').onclick=function(){ startDemo(id); };
   if($('whyBtn')) $('whyBtn').onclick=function(){ showWhy(id); };
   if($('realBtn')) $('realBtn').onclick=tryForReal;
-  if($('backBtn')) $('backBtn').onclick=lessonBack;
+  wireLessonExtra();
 }
 function dealDiagram(h){
   var me=h.me||'S', nm={N:'North',E:'East',S:'South',W:'West'};
@@ -1767,6 +1779,7 @@ el.south.addEventListener('click',onHandClick);
 $('mid').addEventListener('click',function(){ if(pending) pending.fn(); });
 $('startChallenge').onclick=function(){ if(inLesson()){ start('practice'); return; } diag('start-btn-normal-click'); start('challenge');};
 $('hintBtn').onclick=lessonHint;
+$('takeBackBtn').onclick=function(){ $('lessonHint').hidden=true; $('lessonTrap').hidden=true; undo(); };
 $('hintClose').onclick=function(){ $('lessonHint').hidden=true; };
 $('mUndo').onclick=function(){el.menu.classList.remove('open');undo();};
 $('mInvite').onclick=showInvite;
