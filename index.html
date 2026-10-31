@@ -512,7 +512,7 @@ var NAMES={N:'North',E:'East',S:'South',W:'West'};
 var RNAME={11:'J',12:'Q',13:'K',14:'A'};
 
 /* Game rules */
-var BUILD='2026-10-30 a';       // shown in Settings so you can tell which version a phone is running
+var BUILD='2026-10-31 a';       // shown in Settings so you can tell which version a phone is running
 var GATE_URL='';               // NOT YET LIVE: once the bridgescorer.com sign-up gate page exists, set its URL here and challenge links will route through it first, instead of straight into the app as they do now.
 var RESULTS_URL='https://script.google.com/macros/s/AKfycbzQ3emQW0yoTcjrUt6OaGjP9EeiUFtx-AoohDgiu1wkqCNwYdeenqMKbPPNAUkHJd-Z9Q/exec'; // LIVE
 var MAX_ATT=3;
@@ -1215,15 +1215,18 @@ function lessonTrap(id,seat){
   $('trapGo').onclick=function(){ box.hidden=true; trapPass=key; onCardTap(id,seat); if(confirmTap&&trapPass===key) onCardTap(id,seat); };
   return true;
 }
+/* Learn pages on bridgescorer.com, by lesson number: [slug, title]. Add a line when a new lesson page goes up. */
+var LEARN_URL='https://bridgescorer.com/learn/';
+var LESSON_PAGES={1:['hold-up','The hold-up'],2:['long-suit','Setting up a long suit'],3:['ruffing-in-dummy','Ruffing losers in dummy'],4:['discarding-a-loser','Discarding a loser']};
 function lessonExtraBtns(){
   if(!inLesson()) return '';
-  var nx=LESSONS[String(LESSON.lesson+1)];
-  return (nx?'<button class="btn" id="nextLessonBtn">Next lesson: '+esc(nx.title||('Lesson '+nx.lesson))+'</button>':'')+
-    (canGoBack()?'<button class="btn" id="backBtn">Back to the lesson</button>':'');
+  /* one way on: back to this lesson's page, just after Play it (Remember, Try it for real, Next lesson) */
+  if(LESSON_PAGES[LESSON.lesson]) return '<button class="btn primary" id="backBtn">Back to the lesson</button>';
+  return canGoBack()?'<button class="btn" id="backBtn">Back to the lesson</button>':'';
 }
 function wireLessonExtra(){
-  if($('nextLessonBtn')) $('nextLessonBtn').onclick=function(){ location.href=location.pathname+'?lesson='+(LESSON.lesson+1); };
-  if($('backBtn')) $('backBtn').onclick=lessonBack;
+  var lp=LESSON_PAGES[LESSON.lesson];
+  if($('backBtn')) $('backBtn').onclick=lp?function(){ location.href=LEARN_URL+lp[0]+'/#dcl-remember'; }:lessonBack;
 }
 function lessonHint(){
   if(!inLesson()) return;
@@ -1651,9 +1654,10 @@ function showResult(){
   } else if(inLesson()){
     left+=r.made?'<p>Well done: that is '+esc((LESSON.title||'the technique').toLowerCase())+'.</p>':'<p>Not this time. Read the explanation or watch how it is done, then try again.</p>';
     left+='<p class="muted">Lesson hand: not scored.</p>';
-    right+='<div class="acts"><button class="btn primary" id="realBtn">Try Challenge '+challengeNo(LESSON.set||FIRST_ID)+' for real</button>'+
+    /* a lesson with a web page sends the player back to it first (Watch it done, then Try it for real are on the page) */
+    right+='<div class="acts">'+(LESSON_PAGES[LESSON.lesson]?lessonExtraBtns():'<button class="btn primary" id="realBtn">Try Challenge '+challengeNo(LESSON.set||FIRST_ID)+' for real</button>')+
       '<button class="btn" id="practiceBtn">Play it again</button>'+(HAND.sol?'<button class="btn" id="solBtn">Show me how it is done</button>':'')+
-      (HAND.why?'<button class="btn" id="whyBtn">Read the explanation</button>':'')+lessonExtraBtns()+'</div>';
+      (HAND.why?'<button class="btn" id="whyBtn">Read the explanation</button>':'')+(LESSON_PAGES[LESSON.lesson]?'':lessonExtraBtns())+'</div>';
   } else {
     left+='<p class="muted">Practice is not scored.</p>';
     right+='<div class="acts"><button class="btn primary" id="againBtn">Back to the challenge</button><button class="btn" id="practiceBtn">Practise again</button>'+((isDone(id)&&HAND.sol)?'<button class="btn" id="solBtn">Show me how it is done</button>':'')+((isDone(id)&&HAND.pbp)?'<button class="btn" id="whyBtn">Read the explanation</button>':'')+'</div>';
