@@ -331,6 +331,7 @@ html.bix .card .ix.r{color:#c1272d}
       <button class="mbtn" id="mHands">My hands</button>
       <button class="mbtn" id="mDef" hidden>Defence Challenge</button>
       <button class="mbtn" id="mHelp">How to play</button>
+      <button class="mbtn" id="mLearn">Free lessons <small>Learn</small></button>
       <button class="mbtn" id="mReport">Report a defence issue</button>
       <button class="mbtn" id="mInvite">Invite a friend</button>
       <button class="mbtn" id="mLadder">Ladder</button>
@@ -512,7 +513,7 @@ var NAMES={N:'North',E:'East',S:'South',W:'West'};
 var RNAME={11:'J',12:'Q',13:'K',14:'A'};
 
 /* Game rules */
-var BUILD='2026-10-31 a';       // shown in Settings so you can tell which version a phone is running
+var BUILD='2026-10-31 b';       // shown in Settings so you can tell which version a phone is running
 var GATE_URL='';               // NOT YET LIVE: once the bridgescorer.com sign-up gate page exists, set its URL here and challenge links will route through it first, instead of straight into the app as they do now.
 var RESULTS_URL='https://script.google.com/macros/s/AKfycbzQ3emQW0yoTcjrUt6OaGjP9EeiUFtx-AoohDgiu1wkqCNwYdeenqMKbPPNAUkHJd-Z9Q/exec'; // LIVE
 var MAX_ATT=3;
@@ -1806,6 +1807,8 @@ $('mDef').onclick=function(){ el.menu.classList.remove('open'); if(DEF){ abandon
 $('aucBtn').onclick=function(){ $('side').classList.toggle('aucopen'); render(); };
 updDefOn();
 $('mHelp').onclick=showIntro;
+/* the free Learn lessons on bridgescorer.com open in a new tab, so a hand in progress is not lost */
+$('mLearn').onclick=function(){ el.menu.classList.remove('open'); var w=window.open(LEARN_URL,'_blank'); if(w){ try{ w.opener=null; }catch(e){} } else location.href=LEARN_URL; };
 $('mReport').onclick=function(){
   /* offer the hand just played as well as the one now on screen: after "Next hand" they differ */
   var ids=[]; if(lastPlayedId&&lastPlayedId!==HAND.id) ids.push(lastPlayedId); ids.push(HAND.id);
