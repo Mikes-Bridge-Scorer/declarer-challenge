@@ -513,7 +513,7 @@ var NAMES={N:'North',E:'East',S:'South',W:'West'};
 var RNAME={11:'J',12:'Q',13:'K',14:'A'};
 
 /* Game rules */
-var BUILD='2026-10-31 b';       // shown in Settings so you can tell which version a phone is running
+var BUILD='2026-11-01 a';       // shown in Settings so you can tell which version a phone is running
 var GATE_URL='';               // NOT YET LIVE: once the bridgescorer.com sign-up gate page exists, set its URL here and challenge links will route through it first, instead of straight into the app as they do now.
 var RESULTS_URL='https://script.google.com/macros/s/AKfycbzQ3emQW0yoTcjrUt6OaGjP9EeiUFtx-AoohDgiu1wkqCNwYdeenqMKbPPNAUkHJd-Z9Q/exec'; // LIVE
 var MAX_ATT=3;
@@ -1226,6 +1226,7 @@ function lessonExtraBtns(){
   return canGoBack()?'<button class="btn" id="backBtn">Back to the lesson</button>':'';
 }
 function wireLessonExtra(){
+  if(!LESSON) return;
   var lp=LESSON_PAGES[LESSON.lesson];
   if($('backBtn')) $('backBtn').onclick=lp?function(){ location.href=LEARN_URL+lp[0]+'/#dcl-remember'; }:lessonBack;
 }
