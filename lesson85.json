@@ -1,0 +1,297 @@
+{
+ "id": 85,
+ "dealer": "S",
+ "vul": "None",
+ "deal": {
+  "N": "AQ4.753.QJT9.862",
+  "E": "JT52.64.876.KQJ5",
+  "S": "763.AK2.AK5.A743",
+  "W": "K98.QJT98.432.T9"
+ },
+ "trump": "N",
+ "level": 3,
+ "need": 9,
+ "lead": "HQ",
+ "auction": [
+  "1C",
+  "Pass",
+  "1D",
+  "Pass",
+  "2N",
+  "Pass",
+  "3N",
+  "Pass",
+  "Pass",
+  "Pass"
+ ],
+ "sol": [
+  "H3",
+  "HA",
+  "S3",
+  "SQ",
+  "SA",
+  "S6",
+  "DQ",
+  "DK",
+  "DA",
+  "D9",
+  "CA",
+  "C2",
+  "HK",
+  "H5",
+  "D5",
+  "DT",
+  "DJ",
+  "H2",
+  "C8",
+  "C3",
+  "C4",
+  "C6",
+  "S7",
+  "S4",
+  "H7",
+  "C7"
+ ],
+ "pbp": [
+  "Trick 1: West Q♥, North 3♥, East 4♥, South A♥. South wins.",
+  "Trick 2: South 3♠, West 8♠, North Q♠, East 2♠. North wins.",
+  "Trick 3: North A♠, East 5♠, South 6♠, West 9♠. North wins.",
+  "Trick 4: North Q♦, East 6♦, South K♦, West 2♦. South wins.",
+  "Trick 5: South A♦, West 3♦, North 9♦, East 7♦. South wins.",
+  "Trick 6: South A♣, West 9♣, North 2♣, East 5♣. South wins.",
+  "Trick 7: South K♥, West 8♥, North 5♥, East 6♥. South wins.",
+  "Trick 8: South 5♦, West 4♦, North 10♦, East 8♦. North wins.",
+  "Trick 9: North J♦, East 10♠, South 2♥, West 9♥. North wins.",
+  "Trick 10: North 8♣, East J♣, South 3♣, West 10♣. East wins.",
+  "Trick 11: East K♣, South 4♣, West 10♥, North 6♣. East wins.",
+  "Trick 12: East J♠, South 7♠, West K♠, North 4♠. West wins.",
+  "Trick 13: West J♥, North 7♥, East Q♣, South 7♣. West wins."
+ ],
+ "topic": "The finesse: lead towards the A-Q",
+ "lesson": 5,
+ "why": [
+  "South opens 1♣ and rebids 2NT to show 18-19 points; North, with 9, raises to 3NT.",
+  "West leads the ♥Q. Count your tricks: the ♠A, the ♥A-K, four diamonds and the ♣A make eight. The ninth can come from dummy's ♠Q, but only if West has the king and you lead towards it.",
+  "Win the ♥A and lead a low spade from your hand towards dummy's A-Q. West plays low, so play the queen: it wins, because West's king has to play before dummy. Now cash the ♠A and run the diamonds: two spades, two hearts, four diamonds and the ♣A make nine tricks.",
+  "Cash the ♠A and lead the queen, hoping the king falls, and West wins the king: one down. Leading the queen from dummy is worse: West covers it with the king."
+ ],
+ "title": "The finesse",
+ "set": 130,
+ "hints": {
+  "1": "Count your top tricks. Which card in dummy could become the ninth trick, and who would need to hold the card that beats it?",
+  "2": "You hope West has the ♠K. Which hand should you lead from, so that West has to play before dummy?",
+  "default": "Lead from your hand towards dummy's ♠A-Q. If West plays low, try the queen."
+ },
+ "traps": [
+  {
+   "t": 2,
+   "c": "SA",
+   "s": "N",
+   "msg": "If you take the ace, the ♠K can still beat your queen later. Play the queen now: if West has the king, it wins."
+  }
+ ],
+ "page": {
+  "count": "Eight top tricks; the ninth must come from dummy's ♠Q.",
+  "clue": "West's ♥Q lead is the top of a sequence. Nothing tells you where the ♠K is, so give yourself the chance that West has it.",
+  "danger": "Lead the queen, or cash the ace first, and the ♠K takes your queen.",
+  "plan": "Lead low from your hand towards the ♠A-Q, and play the queen when West plays low.",
+  "questions": [
+   {
+    "q": "How many top tricks do you have?",
+    "choices": [
+     "Seven",
+     "Eight",
+     "Nine"
+    ],
+    "answer": "Eight",
+    "hint": "Count the aces and kings, and dummy's diamonds.",
+    "explain": "The ♠A, ♥A-K, four diamonds and the ♣A make eight."
+   },
+   {
+    "q": "Where can the ninth trick come from?",
+    "choices": [
+     "Dummy's ♠Q",
+     "A long club"
+    ],
+    "answer": "Dummy's ♠Q",
+    "hint": "Which honour in dummy is not a winner yet?",
+    "explain": "The ♠Q can win a trick if West has the king and you lead towards it."
+   },
+   {
+    "q": "Which hand should lead the spades?",
+    "choices": [
+     "Your hand, towards dummy",
+     "Dummy, leading the queen"
+    ],
+    "answer": "Your hand, towards dummy",
+    "hint": "You want West to play before dummy.",
+    "explain": "Leading from your hand makes West play before you choose dummy's card."
+   },
+   {
+    "q": "West plays low. Which card do you play from dummy?",
+    "choices": [
+     "The queen",
+     "The ace"
+    ],
+    "answer": "The queen",
+    "hint": "If West has the king, which card can win?",
+    "explain": "The queen wins when West has the king; after the ace, the king would beat it."
+   },
+   {
+    "q": "When does the finesse work?",
+    "choices": [
+     "When West holds the ♠K",
+     "When East holds the ♠K"
+    ],
+    "answer": "When West holds the ♠K",
+    "hint": "The king has to be in front of the A-Q.",
+    "explain": "It is a 50% chance, and here it is your only chance of a ninth trick."
+   }
+  ],
+  "replay": [
+   [
+    "W",
+    [
+     "HQ",
+     "H3",
+     "H4",
+     "HA"
+    ],
+    "HA",
+    "West leads the ♥Q; win the ace."
+   ],
+   [
+    "S",
+    [
+     "S3",
+     "S8",
+     "SQ",
+     "S2"
+    ],
+    "SQ",
+    "Lead towards dummy; West plays low, so play the queen."
+   ],
+   [
+    "N",
+    [
+     "SA",
+     "S5",
+     "S6",
+     "S9"
+    ],
+    "SA",
+    "The finesse worked; now cash the ♠A."
+   ],
+   [
+    "N",
+    [
+     "D9",
+     "D6",
+     "DA",
+     "D2"
+    ],
+    "DA",
+    "Start on the diamonds."
+   ],
+   [
+    "S",
+    [
+     "DK",
+     "D3",
+     "DT",
+     "D7"
+    ],
+    "DK",
+    "Second diamond."
+   ],
+   [
+    "S",
+    [
+     "D5",
+     "D4",
+     "DJ",
+     "D8"
+    ],
+    "DJ",
+    "Back to dummy's diamonds."
+   ],
+   [
+    "N",
+    [
+     "DQ",
+     "ST",
+     "C3",
+     "H8"
+    ],
+    "DQ",
+    "Your fourth diamond trick."
+   ],
+   [
+    "N",
+    [
+     "C2",
+     "C5",
+     "CA",
+     "C9"
+    ],
+    "CA",
+    "Cash the ♣A."
+   ],
+   [
+    "S",
+    [
+     "HK",
+     "H9",
+     "H5",
+     "H6"
+    ],
+    "HK",
+    "And the ♥K: nine tricks."
+   ],
+   [
+    "S",
+    [
+     "C4",
+     "CT",
+     "C6",
+     "CJ"
+    ],
+    "C4",
+    "Now the defence take the rest."
+   ],
+   [
+    "E",
+    [
+     "CK",
+     "C7",
+     "HT",
+     "C8"
+    ],
+    "CK",
+    "East cashes clubs."
+   ],
+   [
+    "E",
+    [
+     "CQ",
+     "S7",
+     "HJ",
+     "S4"
+    ],
+    "CQ",
+    "Another club."
+   ],
+   [
+    "E",
+    [
+     "SJ",
+     "H2",
+     "SK",
+     "H7"
+    ],
+    "SK",
+    "West's king takes the last trick: 3NT made."
+   ]
+  ]
+ }
+}

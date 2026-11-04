@@ -1,0 +1,291 @@
+{
+ "id": 86,
+ "dealer": "S",
+ "vul": "None",
+ "deal": {
+  "N": "752.KQJ643.84.96",
+  "E": "863.972.KT6.AKT2",
+  "S": "AK4.A8.A953.Q854",
+  "W": "QJT9.T5.QJ72.J73"
+ },
+ "trump": "N",
+ "level": 3,
+ "need": 9,
+ "lead": "SQ",
+ "auction": [
+  "1N",
+  "Pass",
+  "3N",
+  "Pass",
+  "Pass",
+  "Pass"
+ ],
+ "sol": [
+  "S2",
+  "SA",
+  "HA",
+  "H3",
+  "H8",
+  "HJ",
+  "HK",
+  "D3",
+  "HQ",
+  "S4",
+  "H6",
+  "C4",
+  "H4",
+  "D5",
+  "S5",
+  "SK",
+  "DA",
+  "D4",
+  "CQ",
+  "C6",
+  "C5",
+  "C9",
+  "D9",
+  "D8",
+  "S7",
+  "C8"
+ ],
+ "pbp": [
+  "Trick 1: West Q♠, North 2♠, East 3♠, South A♠. South wins.",
+  "Trick 2: South A♥, West 5♥, North 3♥, East 2♥. South wins.",
+  "Trick 3: South 8♥, West 10♥, North J♥, East 7♥. North wins.",
+  "Trick 4: North K♥, East 9♥, South 3♦, West 2♦. North wins.",
+  "Trick 5: North Q♥, East 2♣, South 4♠, West 9♠. North wins.",
+  "Trick 6: North 6♥, East 6♦, South 4♣, West 7♦. North wins.",
+  "Trick 7: North 4♥, East 6♠, South 5♦, West 3♣. North wins.",
+  "Trick 8: North 5♠, East 8♠, South K♠, West 10♠. South wins.",
+  "Trick 9: South A♦, West J♦, North 4♦, East K♦. South wins.",
+  "Trick 10: South Q♣, West 7♣, North 6♣, East K♣. East wins.",
+  "Trick 11: East A♣, South 5♣, West J♣, North 9♣. East wins.",
+  "Trick 12: East 10♦, South 9♦, West Q♦, North 8♦. West wins.",
+  "Trick 13: West J♠, North 7♠, East 10♣, South 8♣. West wins."
+ ],
+ "topic": "Keeping an entry: high card from the short hand first",
+ "lesson": 6,
+ "why": [
+  "South opens 1NT with 17 points and North, with six hearts, raises to 3NT.",
+  "West leads the ♠Q. Count your tricks: the ♠A-K, the ♦A and six hearts if they break 3-2 make nine. But dummy has no way in outside hearts, and your ♥A is in the way.",
+  "Win the ♠A and cash the ♥A first: the high card from the short hand. Then lead the ♥8 to dummy's jack. You are in dummy with the ♥K-Q-6-4 still to come, and the defenders' last heart falls under the king. Run the hearts, then come back to your hand for the ♠K and ♦A: nine tricks.",
+  "Lead the ♥8 to the king first, and when you play the next heart your ace has to win it. You are stuck in your hand and dummy's last four hearts never score: three down."
+ ],
+ "title": "Keeping an entry",
+ "set": 166,
+ "hints": {
+  "1": "Count your tricks. Once the hearts are good, how will you get to dummy to cash them?",
+  "2": "You have only two hearts, and one of them is the ace. Which should you play first, so that you finish in dummy?",
+  "default": "Play the high card from the short hand first: cash your ♥A, then lead your small heart to dummy."
+ },
+ "traps": [
+  {
+   "t": 2,
+   "c": "H8",
+   "msg": "If you lead the 8 first, your ♥A will have to win a later round and you will be stuck in your hand, with dummy's hearts stranded. Cash the ♥A first, then lead the 8 to dummy."
+  }
+ ],
+ "page": {
+  "count": "Nine tricks: the ♠A-K, the ♦A and six hearts, if you can reach them.",
+  "clue": "North raised to 3NT with a long suit and nothing else: dummy's only way in is the hearts.",
+  "danger": "Your ♥A can block the suit and strand dummy's winners.",
+  "plan": "Cash the ♥A first, then lead your small heart to dummy and run the suit.",
+  "questions": [
+   {
+    "q": "How many tricks can the hearts give you?",
+    "choices": [
+     "Six",
+     "Four"
+    ],
+    "answer": "Six",
+    "hint": "Dummy has six hearts and the defenders have five.",
+    "explain": "If they break 3-2, all six of dummy's hearts are winners."
+   },
+   {
+    "q": "How else can you reach dummy?",
+    "choices": [
+     "Only with hearts",
+     "With a club"
+    ],
+    "answer": "Only with hearts",
+    "hint": "Look at dummy's other suits.",
+    "explain": "Dummy has no ace or king outside hearts."
+   },
+   {
+    "q": "What can go wrong?",
+    "choices": [
+     "Your ♥A blocks the suit",
+     "West ruffs a heart"
+    ],
+    "answer": "Your ♥A blocks the suit",
+    "hint": "Where will you be after the ace wins?",
+    "explain": "If the ace wins a later round, you are in your hand with dummy's hearts cut off."
+   },
+   {
+    "q": "Which heart do you play first?",
+    "choices": [
+     "Your ♥A",
+     "Your ♥8, to dummy"
+    ],
+    "answer": "Your ♥A",
+    "hint": "Which hand is short in hearts?",
+    "explain": "Play the high card from the short hand first."
+   },
+   {
+    "q": "After the ♥A, how do you go on?",
+    "choices": [
+     "Lead the ♥8 to dummy",
+     "Cash the ♠K"
+    ],
+    "answer": "Lead the ♥8 to dummy",
+    "hint": "Where do you want to be when the hearts are good?",
+    "explain": "You finish in dummy with the rest of the hearts to run."
+   }
+  ],
+  "replay": [
+   [
+    "W",
+    [
+     "SQ",
+     "S2",
+     "S3",
+     "SA"
+    ],
+    "SA",
+    "West leads the ♠Q; win the ace."
+   ],
+   [
+    "S",
+    [
+     "HA",
+     "H5",
+     "H3",
+     "H2"
+    ],
+    "HA",
+    "High card from the short hand first: the ♥A."
+   ],
+   [
+    "S",
+    [
+     "H8",
+     "HT",
+     "HJ",
+     "H7"
+    ],
+    "HJ",
+    "Now the 8 to dummy's jack."
+   ],
+   [
+    "N",
+    [
+     "HK",
+     "H9",
+     "D3",
+     "D2"
+    ],
+    "HK",
+    "The defenders' last heart falls."
+   ],
+   [
+    "N",
+    [
+     "HQ",
+     "C2",
+     "C4",
+     "S9"
+    ],
+    "HQ",
+    "Run the hearts."
+   ],
+   [
+    "N",
+    [
+     "H6",
+     "D6",
+     "C5",
+     "D7"
+    ],
+    "H6",
+    "Another heart."
+   ],
+   [
+    "N",
+    [
+     "H4",
+     "DT",
+     "C8",
+     "C3"
+    ],
+    "H4",
+    "Dummy's sixth heart trick."
+   ],
+   [
+    "N",
+    [
+     "S5",
+     "S8",
+     "SK",
+     "ST"
+    ],
+    "SK",
+    "Back to hand with the ♠K."
+   ],
+   [
+    "S",
+    [
+     "DA",
+     "DJ",
+     "D4",
+     "DK"
+    ],
+    "DA",
+    "The ♦A is your ninth trick."
+   ],
+   [
+    "S",
+    [
+     "D9",
+     "DQ",
+     "D8",
+     "CT"
+    ],
+    "D9",
+    "Now the defence take the rest."
+   ],
+   [
+    "W",
+    [
+     "SJ",
+     "S7",
+     "S6",
+     "S4"
+    ],
+    "SJ",
+    "West cashes a spade."
+   ],
+   [
+    "W",
+    [
+     "CJ",
+     "C9",
+     "CA",
+     "CQ"
+    ],
+    "CA",
+    "East wins the ♣A."
+   ],
+   [
+    "E",
+    [
+     "CK",
+     "D5",
+     "C7",
+     "C6"
+    ],
+    "CK",
+    "And the ♣K: 3NT made."
+   ]
+  ]
+ }
+}
