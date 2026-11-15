@@ -139,6 +139,8 @@ body{background:var(--bg);color:var(--panel-ink);font-family:-apple-system,"Sego
 .panel .btn{border-color:var(--line);background:transparent;color:var(--panel-ink)}
 .panel .btn.primary{background:var(--brass);border-color:var(--brass);color:#2a2008}
 .ov{position:absolute;inset:0;display:none;place-items:center;background:rgba(3,20,14,.66);z-index:40;padding:8px}
+.ov>.xclose{position:absolute;top:10px;right:12px;z-index:45;width:44px;height:44px;border-radius:50%;border:1px solid rgba(214,173,85,.8);background:#0f3a2b;color:#fbf8ef;font:700 20px/1 sans-serif;cursor:pointer;display:grid;place-items:center;box-shadow:0 4px 12px rgba(0,0,0,.35)}
+.ov>.xclose:focus-visible{outline:3px solid #d6ad55;outline-offset:2px}
 .ov.show{display:grid}
 .panel{background:var(--panel);color:var(--panel-ink);border-radius:14px;padding:16px 20px;width:min(640px,96%);max-height:96%;overflow:auto;box-shadow:0 20px 50px rgba(0,0,0,.5);border:1px solid rgba(214,173,85,.55);-webkit-user-select:text;user-select:text}
 .panel h2{margin:0 0 6px;font-family:Georgia,serif;font-size:22px;line-height:1.15}
@@ -513,7 +515,7 @@ var NAMES={N:'North',E:'East',S:'South',W:'West'};
 var RNAME={11:'J',12:'Q',13:'K',14:'A'};
 
 /* Game rules */
-var BUILD='2026-11-03 a';       // shown in Settings so you can tell which version a phone is running
+var BUILD='2026-11-10 a';       // shown in Settings so you can tell which version a phone is running
 var GATE_URL='';               // NOT YET LIVE: once the bridgescorer.com sign-up gate page exists, set its URL here and challenge links will route through it first, instead of straight into the app as they do now.
 var RESULTS_URL='https://script.google.com/macros/s/AKfycbzQ3emQW0yoTcjrUt6OaGjP9EeiUFtx-AoohDgiu1wkqCNwYdeenqMKbPPNAUkHJd-Z9Q/exec'; // LIVE
 var MAX_ATT=3;
@@ -1707,6 +1709,7 @@ function showSet(sid){
   right+='<label class="f" for="setName">Your name (your friend sees it in the email)</label><input type="text" id="setName" maxlength="24" autocomplete="off" value="'+esc(load('name',''))+'">'+
     '<div class="acts"><a class="btn primary" id="setMail" href="#">Challenge a friend to beat this</a><button class="btn" id="setCopy">Copy message</button><button class="btn" id="setShare" hidden>Share\u2026</button></div>'+
     '<p class="muted" style="font-size:12px">Your email app opens with the message ready. You choose who to send it to.</p>'+
+    '<p class="muted" style="margin:10px 0 4px">Play these hands again, for practice (not timed or scored):</p><div class="acts">'+ids.map(function(id,k){return '<button class="btn" data-practise="'+id+'">Hand '+(k+1)+'</button>';}).join('')+'</div>'+
     '<div class="acts"><button class="btn" id="setMore">Play more hands</button><button class="btn" id="setLadder">View the ladder</button><button class="btn" data-close="ovSet">Close</button></div>';
   $('setPanel').innerHTML='<div class="res"><div>'+left+'</div><div>'+right+'</div></div>';
   $('ovSet').classList.add('show');
@@ -1714,6 +1717,9 @@ function showSet(sid){
   var more=isDefId(sid)?function(){ closeAll(); defToReady(); }:goHome;
   $('setMore').onclick=more;
   $('setLadder').onclick=function(){ showLadder(sid); };
+  Array.prototype.forEach.call($('setPanel').querySelectorAll('[data-practise]'),function(btn){
+    btn.onclick=function(){ var id=+btn.getAttribute('data-practise'); if(isDefId(id)) readyDefHand(id); else readyHand(id); start('practice'); };
+  });
   $('setPanel').querySelector('[data-close]').onclick=more;
 }
 function showHands(note){
@@ -1898,6 +1904,18 @@ $('optConfirm').onchange=function(){ confirmTap=this.checked; save('confirm',con
 Array.prototype.forEach.call(document.querySelectorAll('[data-close]'),function(b){
   b.onclick=function(){ $(b.getAttribute('data-close')).classList.remove('show'); requestAnimationFrame(function(){ layout(); render(); }); };
 });
+/* a close (X) button on every pop-up: uses the pop-up's own Close/Not now button when it has one */
+Array.prototype.forEach.call(document.querySelectorAll('.ov'),function(ov){
+  var x=document.createElement('button'); x.type='button'; x.className='xclose'; x.setAttribute('aria-label','Close'); x.textContent='\u2715';
+  x.onclick=function(){
+    var own=Array.prototype.filter.call(ov.querySelectorAll('[data-close]'),function(b){ return b.offsetParent!==null; })[0];
+    if(own){ own.click(); return; }
+    ov.classList.remove('show');
+    if(ov.id==='ovResult'){ if(inLesson()) lessonReady(); else if(DEF) defToReady(); else goHome(); return; }
+    requestAnimationFrame(function(){ layout(); render(); });
+  };
+  ov.appendChild(x);
+});
 window.addEventListener('online',function(){ if($('ovHome').classList.contains('show')) refreshHomeConn(); flushActivation(); });
 window.addEventListener('offline',function(){ if($('ovHome').classList.contains('show')) refreshHomeConn(); });
 window.addEventListener('resize',function(){ layout(); render(); });
@@ -1966,7 +1984,8 @@ try{ applyPack(JSON.parse(localStorage.getItem('dcp:pack')||'null')); }catch(e){
   var id=nextHandId();
   if(LESSON) loadLesson(); else loadHand(id!==null?id:LAST_ID);
   newGame(); layout(); render();
-  var alreadyDone = incoming && incoming.set && setComplete(incoming.set) && load('incSeen'+incoming.set,'')!=='1';
+  var fromLink=!!new URLSearchParams(location.search).get('set');
+  var alreadyDone = incoming && incoming.set && setComplete(incoming.set) && (fromLink || load('incSeen'+incoming.set,'')!=='1');
   if(LESSON){ /* lesson link: stay on the lesson hand's ready screen */ }
   else if(alreadyDone){
     save('incSeen'+incoming.set,'1');
