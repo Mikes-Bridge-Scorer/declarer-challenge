@@ -174,7 +174,7 @@ body{background:var(--bg);color:var(--panel-ink);font-family:-apple-system,"Sego
 .badge{display:inline-block;background:var(--brass);color:#2a2008;font-weight:700;font-size:12px;border-radius:6px;padding:2px 8px;margin-bottom:4px}
 .cmp{font-weight:600;margin:0 0 8px;padding:8px 10px;border-radius:8px;background:rgba(214,173,85,.22);font-size:14px}
 label.f{display:block;font-size:13px;font-weight:600;margin:6px 0 4px}
-input[type=text]{font:inherit;font-size:16px;width:100%;min-height:40px;border-radius:8px;border:1px solid var(--line);background:transparent;color:var(--panel-ink);padding:0 10px;-webkit-user-select:text;user-select:text}
+input[type=text],input[type=email]{font:inherit;font-size:16px;width:100%;min-height:40px;border-radius:8px;border:1px solid var(--line);background:transparent;color:var(--panel-ink);padding:0 10px;-webkit-user-select:text;user-select:text}
 .tog{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:10px 0;border-bottom:1px solid var(--line);font-size:15px}
 .tog input{width:24px;height:24px;accent-color:#b88a2a}
 
@@ -423,7 +423,17 @@ html.bix .card .ix.r{color:#c1272d}
 
   <div class="ov" id="ovPay"><div class="panel">
     <h2>Unlock more hands</h2>
-    <p><b>Have a code?</b> Enter it below with your email. It is remembered on this device.</p><p>No code yet? Choose Annual (&pound;10 a year) or Lifetime (&pound;25) on Ko-fi and you will receive a 6-digit code.</p>
+    <div id="joinBox" style="background:#eef7f1;border:2px solid #0f4d3a;border-radius:10px;padding:10px 12px;margin:0 0 12px">
+      <p style="margin:0 0 6px"><b>Join Bridge at Sea free and get a year's play.</b> Just your name and email: every hand unlocks straight away.</p>
+      <label class="f" for="joinName">Your name</label>
+      <input type="text" id="joinName" autocomplete="name">
+      <label class="f" for="joinEmail">Your email</label>
+      <input type="email" id="joinEmail" autocomplete="email">
+      <p style="font-size:.85em;margin:6px 0">We'll send you the occasional Bridge at Sea newsletter. You can unsubscribe at any time.</p>
+      <div class="acts"><button class="btn primary" id="joinGo">Join free</button></div>
+      <p id="joinMsg" style="font-weight:600;min-height:1.2em;margin:4px 0 0"></p>
+    </div>
+    <p><b>Already have a code?</b> Enter it below with your email. It is remembered on this device.</p><p>No code yet? Choose Annual (&pound;10 a year) or Lifetime (&pound;25) on Ko-fi and you will receive a 6-digit code.</p>
     <div class="acts"><a class="btn primary" id="payAnnual" target="_blank" rel="noopener">Annual &pound;10</a><a class="btn" id="payLife" target="_blank" rel="noopener">Lifetime &pound;25</a></div>
     <label class="f" for="payEmail">Your email</label>
     <input type="email" id="payEmail" autocomplete="email">
@@ -515,7 +525,7 @@ var NAMES={N:'North',E:'East',S:'South',W:'West'};
 var RNAME={11:'J',12:'Q',13:'K',14:'A'};
 
 /* Game rules */
-var BUILD='2026-11-10 a';       // shown in Settings so you can tell which version a phone is running
+var BUILD='2026-11-17 a';       // shown in Settings so you can tell which version a phone is running
 var GATE_URL='';               // NOT YET LIVE: once the bridgescorer.com sign-up gate page exists, set its URL here and challenge links will route through it first, instead of straight into the app as they do now.
 var RESULTS_URL='https://script.google.com/macros/s/AKfycbzQ3emQW0yoTcjrUt6OaGjP9EeiUFtx-AoohDgiu1wkqCNwYdeenqMKbPPNAUkHJd-Z9Q/exec'; // LIVE
 var MAX_ATT=3;
@@ -536,6 +546,7 @@ var LICENSE={
   annualUrl:'https://ko-fi.com/s/00148931e7',
   lifeUrl:'https://ko-fi.com/s/060efe1516',
   codes:{'501025':'annual','502510':'lifetime','505050':'lifetime','508549':'annual'},   // 508549 = members' code (free year for everyone who joins)
+  joinCode:'508549',                                        // what "Join free" on the unlock screen uses
   gift:{'502510':true,'505050':true,'508549':true}          // codes given away freely: never show the 'used by more people' warning
 };
 
@@ -921,7 +932,7 @@ function canPlay(id){return (isDefId(id)?id<=DFREE_MAX:id<=FREE_MAX)||licStatus(
 function queueActivation(code,email){ try{ localStorage.setItem('dcp:licPending', JSON.stringify({code:code,email:email})); }catch(e){} }
 function reportActivation(code,email,cb,resend){
   if(!RESULTS_URL||!navigator.onLine){ if(cb) cb(null); return; }
-  var url=RESULTS_URL+'?action=dcActivate&code='+encodeURIComponent(code)+'&email='+encodeURIComponent(email||'')+'&visitor='+encodeURIComponent(visitorId())+(resend?'&resend=1':'');
+  var url=RESULTS_URL+'?action=dcActivate&code='+encodeURIComponent(code)+'&email='+encodeURIComponent(email||'')+'&visitor='+encodeURIComponent(visitorId())+(load('licName','')?'&name='+encodeURIComponent(load('licName','')):'')+(resend?'&resend=1':'');
   fetch(url).then(function(r){return r.json();}).then(function(data){
     try{ localStorage.removeItem('dcp:licPending'); }catch(e){}
     if(cb) cb(data);
@@ -1775,8 +1786,8 @@ function showDefIntro(){
   $('ovIntro').classList.add('show');
 }
 function showPay(){
-  $('payMsg').textContent=''; $('payCode').value='';
-  var p=getPlayer(); $('payEmail').value=p?p.email:'';
+  $('payMsg').textContent=''; $('payCode').value=''; $('joinMsg').textContent='';
+  var p=getPlayer(); $('payEmail').value=p?p.email:''; $('joinEmail').value=p?p.email:''; $('joinName').value=p?p.name:'';
   el.menu.classList.remove('open');
   $('ovPay').classList.add('show');
 }
@@ -1888,6 +1899,19 @@ $('handsBody').onclick=function(e){
   else if(act==='why'){ showWhy(id); }
   else if(act==='unlock') showPay();
   else if(act==='set'){ closeAll(); showSet(+b.getAttribute('data-sid')); }
+};
+/* Join free (17 Nov 2026): name + email unlock a year with the members' code, and the activation
+   (with the name) is recorded in the licence sheet like any other unlock. */
+$('joinGo').onclick=function(){
+  var nm=$('joinName').value.trim(), em=$('joinEmail').value.trim();
+  if(nm.length<2){ $('joinMsg').textContent='Please enter your name.'; return; }
+  if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(em)){ $('joinMsg').textContent='Please enter your email address.'; return; }
+  save('licName',nm);
+  $('joinMsg').textContent='Joining...';
+  tryUnlock(LICENSE.joinCode,em,function(res){
+    $('joinMsg').textContent=res.ok?'Welcome to Bridge at Sea! Every hand is unlocked for a year.':res.message;
+    if(res.ok) setTimeout(function(){ $('ovPay').classList.remove('show'); toReady(); },1800);
+  });
 };
 $('payGo').onclick=function(){
   $('payMsg').textContent='Checking...';
