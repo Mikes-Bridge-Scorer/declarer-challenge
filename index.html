@@ -334,6 +334,7 @@ html.bix .card .ix.r{color:#c1272d}
       <button class="mbtn" id="mDef" hidden>Defence Challenge</button>
       <button class="mbtn" id="mHelp">How to play</button>
       <button class="mbtn" id="mLearn">Free lessons <small>Learn</small></button>
+      <button class="mbtn" id="mSupport">Support Bridge at Sea &#9749;</button>
       <button class="mbtn" id="mReport">Report a defence issue</button>
       <button class="mbtn" id="mInvite">Invite a friend</button>
       <button class="mbtn" id="mLadder">Ladder</button>
@@ -424,6 +425,12 @@ html.bix .card .ix.r{color:#c1272d}
   <div class="ov" id="ovPay"><div class="panel">
     <h2>Unlock more hands</h2>
     <div id="joinBox" style="background:#eef7f1;border:2px solid #0f4d3a;border-radius:10px;padding:10px 12px;margin:0 0 12px">
+     <div id="joinDone" hidden>
+      <p style="margin:0 0 6px;font-size:1.1em"><b>You're in! Welcome to Bridge at Sea.</b></p>
+      <p style="margin:0 0 8px">Every hand is unlocked for a year. If you enjoy it, a &pound;5 coffee helps keep it free for everyone.</p>
+      <div class="acts" style="margin:0"><button class="btn primary" type="button" id="joinPlay">Start playing</button><a class="btn sup-k" id="joinCoffee" target="_blank" rel="noopener">&#9749; &pound;5 coffee</a></div>
+     </div>
+     <div id="joinForm">
       <p style="margin:0 0 6px"><b>Join Bridge at Sea free and get a year's play.</b> Just your name and email: every hand unlocks straight away.</p>
       <label class="f" for="joinName">Your name</label>
       <input type="text" id="joinName" autocomplete="name">
@@ -432,6 +439,7 @@ html.bix .card .ix.r{color:#c1272d}
       <p style="font-size:.85em;margin:6px 0">We'll send you the occasional Bridge at Sea newsletter. You can unsubscribe at any time.</p>
       <div class="acts"><button class="btn primary" id="joinGo">Join free</button></div>
       <p id="joinMsg" style="font-weight:600;min-height:1.2em;margin:4px 0 0"></p>
+     </div>
     </div>
     <p><b>Already have a code?</b> Enter it below with your email. It is remembered on this device.</p><p>No code yet? Choose Annual (&pound;10 a year) or Lifetime (&pound;25) on Ko-fi and you will receive a 6-digit code.</p>
     <div class="acts"><a class="btn primary" id="payAnnual" target="_blank" rel="noopener">Annual &pound;10</a><a class="btn" id="payLife" target="_blank" rel="noopener">Lifetime &pound;25</a></div>
@@ -441,6 +449,15 @@ html.bix .card .ix.r{color:#c1272d}
     <input type="text" id="payCode" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="off">
     <div class="acts"><button class="btn primary" id="payGo">Unlock</button><button class="btn" data-close="ovPay">Not now</button></div>
     <p id="payMsg" style="font-weight:600;min-height:1.4em"></p>
+  </div></div>
+
+  <div class="ov" id="ovSupport"><div class="panel">
+    <h2>&#9749; Support Bridge at Sea</h2>
+    <p>Bridge at Sea is run by one bridge player. The lessons, the free hands and the scoring apps cost nothing to use, but the website, the email sending and the apps all have running costs.</p>
+    <p>If you'd like to help, even <b>&pound;5</b> makes a real difference. Or take out an Annual or Lifetime subscription, which also unlocks every hand.</p>
+    <div class="acts"><a class="btn primary sup-k" id="supCoffee" target="_blank" rel="noopener">&#9749; &pound;5 one-off</a><a class="btn sup-k" id="supAnnual" target="_blank" rel="noopener">Annual &pound;10</a><a class="btn sup-k" id="supLife" target="_blank" rel="noopener">Lifetime &pound;25</a></div>
+    <p class="muted" style="font-size:.9em">Payments are made safely on Ko-fi. Thank you!</p>
+    <div class="acts"><button class="btn" data-close="ovSupport">Close</button></div>
   </div></div>
 
   <div class="ov" id="ovResult"><div class="panel" id="resultPanel"></div></div>
@@ -525,7 +542,7 @@ var NAMES={N:'North',E:'East',S:'South',W:'West'};
 var RNAME={11:'J',12:'Q',13:'K',14:'A'};
 
 /* Game rules */
-var BUILD='2026-11-17 a';       // shown in Settings so you can tell which version a phone is running
+var BUILD='2026-11-18 a';       // shown in Settings so you can tell which version a phone is running
 var GATE_URL='';               // NOT YET LIVE: once the bridgescorer.com sign-up gate page exists, set its URL here and challenge links will route through it first, instead of straight into the app as they do now.
 var RESULTS_URL='https://script.google.com/macros/s/AKfycbzQ3emQW0yoTcjrUt6OaGjP9EeiUFtx-AoohDgiu1wkqCNwYdeenqMKbPPNAUkHJd-Z9Q/exec'; // LIVE
 var MAX_ATT=3;
@@ -545,6 +562,7 @@ var LAST_ID=168;               // last hand in this build -- exactly 12 complete
 var LICENSE={
   annualUrl:'https://ko-fi.com/s/00148931e7',
   lifeUrl:'https://ko-fi.com/s/060efe1516',
+  coffeeUrl:'https://ko-fi.com/mike23528549',               // one-off support (Ko-fi page: buy a coffee)
   codes:{'501025':'annual','502510':'lifetime','505050':'lifetime','508549':'annual'},   // 508549 = members' code (free year for everyone who joins)
   joinCode:'508549',                                        // what "Join free" on the unlock screen uses
   gift:{'502510':true,'505050':true,'508549':true}          // codes given away freely: never show the 'used by more people' warning
@@ -637,7 +655,7 @@ var $=function(id){return document.getElementById(id);};
    copy/pasted back to us instead of guessed at. Never throws, never blocks the UI. ---- */
 var DIAG_MAX=30;
 function diagState(){
-  var ovs=[]; try{ ['ovSettings','ovInvite','ovResult','ovQuit','ovSet','ovHands','ovPay','ovIntro','ovWhy','ovHome','ovReport','ovRegister','ovLadder'].forEach(function(i){var n=$(i); if(n&&n.classList.contains('show')) ovs.push(i);}); }catch(e){}
+  var ovs=[]; try{ ['ovSettings','ovInvite','ovResult','ovQuit','ovSet','ovHands','ovPay','ovIntro','ovWhy','ovHome','ovReport','ovRegister','ovLadder','ovSupport'].forEach(function(i){var n=$(i); if(n&&n.classList.contains('show')) ovs.push(i);}); }catch(e){}
   var rotate=''; try{ rotate=getComputedStyle($('rotate')).display; }catch(e){}
   var menuOpen=false; try{ menuOpen=el.menu&&el.menu.classList.contains('open'); }catch(e){}
   var orient=''; try{ orient=(screen.orientation&&screen.orientation.type)||(window.orientation!==undefined?String(window.orientation):''); }catch(e){}
@@ -923,6 +941,34 @@ function licStatus(){
   var days=365-Math.floor((Date.now()-ts)/86400000);
   return {ok:days>0,kind:'annual',daysLeft:days};
 }
+/* ---------- Support us (18 Nov 2026) ----------
+   A small card at the foot of a result, after a good moment (a lesson made, or every hand from the
+   5th on), at most once every 30 days. Never for paid annual subscribers (code 501025), and not for
+   6 months after anyone taps a Ko-fi button. */
+var SUPPORT_EVERY_DAYS=30, SUPPORT_AFTER_HANDS=5, SUPPORT_QUIET_DAYS=180;
+function supportDue(goodMoment){
+  var n=(+load('supN',0))+1; save('supN',n);
+  if(load('lic','')==='501025') return false;
+  var day=86400000, now=Date.now();
+  if(now-(+load('supKofi',0))<SUPPORT_QUIET_DAYS*day) return false;
+  if(now-(+load('supTs',0))<SUPPORT_EVERY_DAYS*day) return false;
+  if(!goodMoment&&n<SUPPORT_AFTER_HANDS) return false;
+  save('supTs',now); return true;
+}
+function supportCard(){
+  return '<div class="supcard" style="margin-top:12px;padding:10px 12px;border:1px solid rgba(214,173,85,.8);border-radius:10px;background:rgba(214,173,85,.12)">'+
+    '<p style="margin:0 0 6px"><b>&#9749; Enjoying the Challenge?</b> Bridge at Sea is run by one bridge player, and the lessons and apps are free. If you\'d like to help with the running costs, even &pound;5 makes a difference.</p>'+
+    '<div class="acts" style="margin:0"><a class="btn primary sup-k" target="_blank" rel="noopener" href="'+LICENSE.coffeeUrl+'">&#9749; &pound;5 one-off</a>'+
+    '<a class="btn sup-k" target="_blank" rel="noopener" href="'+LICENSE.annualUrl+'">Annual &pound;10</a>'+
+    '<a class="btn sup-k" target="_blank" rel="noopener" href="'+LICENSE.lifeUrl+'">Lifetime &pound;25</a>'+
+    '<button class="btn" type="button" onclick="this.closest(\'.supcard\').remove()">Maybe later</button></div></div>';
+}
+/* any Ko-fi tap: thank-you is on Ko-fi, and the app stops asking for a while */
+document.addEventListener('click',function(ev){ var a=ev.target.closest&&ev.target.closest('.sup-k'); if(a) save('supKofi',Date.now()); },true);
+function showSupport(){
+  $('supCoffee').href=LICENSE.coffeeUrl; $('supAnnual').href=LICENSE.annualUrl; $('supLife').href=LICENSE.lifeUrl;
+  el.menu.classList.remove('open'); $('ovSupport').classList.add('show');
+}
 function canPlay(id){return (isDefId(id)?id<=DFREE_MAX:id<=FREE_MAX)||licStatus().ok||!!(incoming&&incoming.set&&setStart(id)===incoming.set);}
 /* Unlocking always works offline first (this device saves the licence immediately, so a
    cruise-ship-wifi buyer isn't blocked). The email+code is also reported to the server in the
@@ -1148,6 +1194,7 @@ function showDefResult(){
     right+='<div class="acts"><button class="btn primary" id="againBtn">Back to the challenge</button><button class="btn" id="practiceBtn">Practise again</button>'+((isDone(id)&&HAND.sol)?'<button class="btn" id="solBtn">Show me how it is done</button>':'')+((isDone(id)&&HAND.pbp)?'<button class="btn" id="whyBtn">Read the explanation</button>':'')+'</div>';
   }
   right+='<div class="acts"><button class="btn" id="dList">Defence hands</button></div>';
+  if(supportDue(false)) left+=supportCard();
   $('resultPanel').innerHTML='<div class="res"><div>'+left+'</div><div>'+right+'</div></div>';
   $('ovResult').classList.add('show');
   $('againBtn').onclick=afterHand;
@@ -1583,7 +1630,7 @@ function render(){
 }
 
 /* ---------- overlays / messages ---------- */
-function closeAll(){['ovSettings','ovInvite','ovResult','ovQuit','ovSet','ovHands','ovPay','ovIntro','ovWhy','ovHome','ovReport','ovRegister','ovLadder'].forEach(function(i){$(i).classList.remove('show');});el.menu.classList.remove('open');$('menuBtn').setAttribute('aria-expanded','false');}
+function closeAll(){['ovSettings','ovInvite','ovResult','ovQuit','ovSet','ovHands','ovPay','ovIntro','ovWhy','ovHome','ovReport','ovRegister','ovLadder','ovSupport'].forEach(function(i){$(i).classList.remove('show');});el.menu.classList.remove('open');$('menuBtn').setAttribute('aria-expanded','false');}
 function baseUrl(){return location.href.split('#')[0].split('?')[0];}
 function linkBase(){return GATE_URL||baseUrl();}
 function buildInvite(name){
@@ -1677,6 +1724,7 @@ function showResult(){
     left+='<p class="muted">Practice is not scored.</p>';
     right+='<div class="acts"><button class="btn primary" id="againBtn">Back to the challenge</button><button class="btn" id="practiceBtn">Practise again</button>'+((isDone(id)&&HAND.sol)?'<button class="btn" id="solBtn">Show me how it is done</button>':'')+((isDone(id)&&HAND.pbp)?'<button class="btn" id="whyBtn">Read the explanation</button>':'')+'</div>';
   }
+  if(supportDue(inLesson()&&r.made)) left+=supportCard();
   $('resultPanel').innerHTML='<div class="res"><div>'+left+'</div><div>'+right+'</div></div>';
   $('ovResult').classList.add('show');
   if($('againBtn')) $('againBtn').onclick=afterHand;
@@ -1826,6 +1874,7 @@ $('aucBtn').onclick=function(){ $('side').classList.toggle('aucopen'); render();
 updDefOn();
 $('mHelp').onclick=showIntro;
 /* the free Learn lessons on bridgescorer.com open in a new tab, so a hand in progress is not lost */
+$('mSupport').onclick=showSupport;
 $('mLearn').onclick=function(){ el.menu.classList.remove('open'); var w=window.open(LEARN_URL,'_blank'); if(w){ try{ w.opener=null; }catch(e){} } else location.href=LEARN_URL; };
 $('mReport').onclick=function(){
   /* offer the hand just played as well as the one now on screen: after "Next hand" they differ */
@@ -1909,10 +1958,12 @@ $('joinGo').onclick=function(){
   save('licName',nm);
   $('joinMsg').textContent='Joining...';
   tryUnlock(LICENSE.joinCode,em,function(res){
-    $('joinMsg').textContent=res.ok?'Welcome to Bridge at Sea! Every hand is unlocked for a year.':res.message;
-    if(res.ok) setTimeout(function(){ $('ovPay').classList.remove('show'); toReady(); },1800);
+    if(!res.ok){ $('joinMsg').textContent=res.message; return; }
+    $('joinMsg').textContent=''; $('joinCoffee').href=LICENSE.coffeeUrl;
+    $('joinForm').hidden=true; $('joinDone').hidden=false;
   });
 };
+$('joinPlay').onclick=function(){ $('ovPay').classList.remove('show'); toReady(); };
 $('payGo').onclick=function(){
   $('payMsg').textContent='Checking...';
   tryUnlock($('payCode').value,$('payEmail').value,function(res){
