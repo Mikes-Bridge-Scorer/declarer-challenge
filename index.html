@@ -542,7 +542,7 @@ var NAMES={N:'North',E:'East',S:'South',W:'West'};
 var RNAME={11:'J',12:'Q',13:'K',14:'A'};
 
 /* Game rules */
-var BUILD='2026-11-18 a';       // shown in Settings so you can tell which version a phone is running
+var BUILD='2026-11-20 a';       // shown in Settings so you can tell which version a phone is running
 var GATE_URL='';               // NOT YET LIVE: once the bridgescorer.com sign-up gate page exists, set its URL here and challenge links will route through it first, instead of straight into the app as they do now.
 var RESULTS_URL='https://script.google.com/macros/s/AKfycbzQ3emQW0yoTcjrUt6OaGjP9EeiUFtx-AoohDgiu1wkqCNwYdeenqMKbPPNAUkHJd-Z9Q/exec'; // LIVE
 var MAX_ATT=3;
@@ -1469,6 +1469,9 @@ function finish(){
     save('inprog','');
     done=isDone(HAND.id);
     if(done) submitResult(HAND.id);
+  } else if(inLesson()){
+    // (20 Nov) lesson hands go in the anonymous play log too, marked "lesson" in the Source column
+    logPlay({h:HAND.id,m:made,tr:tricks,n:HAND.need,t:secs,a:attempt,p:0,src:'lesson'});
   }
   resultData={tricks:tricks,diff:diff,made:made,secs:secs,pts:pts,done:done,att:attempt};
   var tok=token; setTimeout(function(){ if(tok===token) showResult(); },800);
