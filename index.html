@@ -542,7 +542,7 @@ var NAMES={N:'North',E:'East',S:'South',W:'West'};
 var RNAME={11:'J',12:'Q',13:'K',14:'A'};
 
 /* Game rules */
-var BUILD='2026-11-20 a';       // shown in Settings so you can tell which version a phone is running
+var BUILD='2026-11-23 a';       // shown in Settings so you can tell which version a phone is running
 var GATE_URL='';               // NOT YET LIVE: once the bridgescorer.com sign-up gate page exists, set its URL here and challenge links will route through it first, instead of straight into the app as they do now.
 var RESULTS_URL='https://script.google.com/macros/s/AKfycbzQ3emQW0yoTcjrUt6OaGjP9EeiUFtx-AoohDgiu1wkqCNwYdeenqMKbPPNAUkHJd-Z9Q/exec'; // LIVE
 var MAX_ATT=3;
@@ -1278,7 +1278,7 @@ function lessonTrap(id,seat){
 }
 /* Learn pages on bridgescorer.com, by lesson number: [slug, title]. Add a line when a new lesson page goes up. */
 var LEARN_URL='https://bridgescorer.com/learn/';
-var LESSON_PAGES={1:['hold-up','The hold-up'],2:['long-suit','Setting up a long suit'],3:['ruffing-in-dummy','Ruffing losers in dummy'],4:['discarding-a-loser','Discarding a loser'],5:['the-finesse','The finesse'],6:['keeping-an-entry','Keeping an entry']};
+var LESSON_PAGES={1:['hold-up','The hold-up'],2:['long-suit','Setting up a long suit'],3:['ruffing-in-dummy','Ruffing losers in dummy'],4:['discarding-a-loser','Discarding a loser'],5:['the-finesse','The finesse'],6:['keeping-an-entry','Keeping an entry'],7:['drawing-trumps','Drawing trumps'],8:['leading-towards-an-honour','Leading towards an honour']};
 function lessonExtraBtns(){
   if(!inLesson()) return '';
   /* one way on: back to this lesson's page, just after Play it (Remember, Try it for real, Next lesson) */
