@@ -542,7 +542,7 @@ var NAMES={N:'North',E:'East',S:'South',W:'West'};
 var RNAME={11:'J',12:'Q',13:'K',14:'A'};
 
 /* Game rules */
-var BUILD='2026-11-23 a';       // shown in Settings so you can tell which version a phone is running
+var BUILD='2026-11-24 a';       // shown in Settings so you can tell which version a phone is running
 var GATE_URL='';               // NOT YET LIVE: once the bridgescorer.com sign-up gate page exists, set its URL here and challenge links will route through it first, instead of straight into the app as they do now.
 var RESULTS_URL='https://script.google.com/macros/s/AKfycbzQ3emQW0yoTcjrUt6OaGjP9EeiUFtx-AoohDgiu1wkqCNwYdeenqMKbPPNAUkHJd-Z9Q/exec'; // LIVE
 var MAX_ATT=3;
@@ -1186,7 +1186,7 @@ function showDefResult(){
       '<div class="kv"><div>Time<b>'+fmtSec(r.secs)+'</b></div><div>Attempt<b>'+r.att+' of '+MAX_ATT+'</b></div></div>';
     if(extra>0){ var bn=Math.min(extra,OVER_CAP)*OVER_BONUS; left+='<p>Includes '+bn+' bonus point'+(bn===1?'':'s')+' for '+extra+' extra undertrick'+(extra===1?'':'s')+'.</p>'; }
     if(r.done) left+='<p>Hand complete. Your score for this hand is <b>'+b.p+' points</b> in '+fmtSec(b.t)+'.</p>';
-    else left+='<p>The contract can be beaten. You have '+remain+' attempt'+(remain===1?'':'s')+' left. Beating it next time scores '+(r.att+1===2?6:3)+' points, plus a bonus for any extra undertricks.</p>';
+    else left+='<p>The contract can be beaten. You have '+remain+' attempt'+(remain===1?'':'s')+' left. Beating it next time scores '+(r.att+1===2?6:3)+' points, plus a bonus for any extra undertricks.</p>'+coachCard(HAND,true);
     var label=!r.done?'Try again':(setPending(setStart(id))?'See your challenge score':'Next hand');
     right+='<div class="acts"><button class="btn primary" id="againBtn">'+label+'</button>'+(r.done?'<button class="btn" id="practiceBtn">Practise this hand</button>':'')+((r.done&&HAND.sol)?'<button class="btn" id="solBtn">Show me how it is done</button>':'')+((r.done&&HAND.pbp)?'<button class="btn" id="whyBtn">Read the explanation</button>':'')+'</div>';
   } else {
@@ -1194,9 +1194,10 @@ function showDefResult(){
     right+='<div class="acts"><button class="btn primary" id="againBtn">Back to the challenge</button><button class="btn" id="practiceBtn">Practise again</button>'+((isDone(id)&&HAND.sol)?'<button class="btn" id="solBtn">Show me how it is done</button>':'')+((isDone(id)&&HAND.pbp)?'<button class="btn" id="whyBtn">Read the explanation</button>':'')+'</div>';
   }
   right+='<div class="acts"><button class="btn" id="dList">Defence hands</button></div>';
-  if(supportDue(false)) left+=supportCard();
+  if(r.beat&&supportDue(false)) left+=supportCard();
   $('resultPanel').innerHTML='<div class="res"><div>'+left+'</div><div>'+right+'</div></div>';
   $('ovResult').classList.add('show');
+  wireCoach(HAND);
   $('againBtn').onclick=afterHand;
   if($('practiceBtn')) $('practiceBtn').onclick=function(){ start('practice'); };
   if($('solBtn')) $('solBtn').onclick=function(){ startDefDemo(id); };
@@ -1703,6 +1704,31 @@ function afterHand(){
   }
   toReady();
 }
+/* ---------- After you go down (24 Nov 2026) ----------
+   The play log showed that retries get WORSE and FASTER (54% made first time, 40% second, 30% third,
+   and 30 seconds quicker each time): players rush back in and guess. So after a failed scored attempt
+   with attempts left, a small coaching card: a planning checklist, a hint (the hand's topic) on request,
+   and a link to the lesson that teaches the idea, where there is one. Nothing that gives the play away. */
+var LESSON_FOR_HAND={100:1,139:2,110:3,111:4,132:5,167:6,101:7,130:8};
+function coachCard(h,def){
+  var steps=def?
+    ['Count: how many tricks can declarer take? How many does your side need?','Partner’s cards: what is partner telling you with the lead or the signal?','Dummy: which suit will declarer use, and what must you do before that happens?','Then choose your card.']:
+    ['Count: how many tricks can you see, or how many losers do you have?','The lead: what does it tell you?','Danger: what could the defenders do to beat you?','Then make a plan before you play to trick 1.'];
+  // only link a lesson the app actually has (Lessons 7-8 arrive with the December hand list,
+  // when 101 and 130 also become their matching hands)
+  var ln=LESSON_FOR_HAND[h.id], lp=ln&&LESSONS[ln]&&LESSON_PAGES[ln];
+  return '<div class="coach" style="margin-top:12px;padding:10px 12px;border:1px solid var(--line);border-radius:10px">'+
+    '<p style="margin:0 0 6px"><b>Before you try again</b></p>'+
+    '<p style="margin:0 0 6px">Take your time: the clock only matters to break a tie.</p>'+
+    '<ol style="margin:0 0 8px 20px;padding:0">'+steps.map(function(x){return '<li>'+esc(x)+'</li>';}).join('')+'</ol>'+
+    '<div class="acts" style="margin:0">'+(h.topic?'<button class="btn" type="button" id="coachHint">&#128161; Show me a hint</button>':'')+
+    (lp?'<a class="btn" target="_blank" rel="noopener" href="'+LEARN_URL+lp[0]+'/">&#128214; Lesson '+ln+': '+esc(lp[1])+'</a>':'')+'</div>'+
+    '<p id="coachHintTxt" style="display:none;margin:8px 0 0;font-style:italic"></p></div>';
+}
+function wireCoach(h){
+  var b=$('coachHint'); if(!b) return;
+  b.onclick=function(){ var t=$('coachHintTxt'); t.textContent='Hint: '+h.topic+'.'; t.style.display='block'; b.disabled=true; };
+}
 function showResult(){
   var r=resultData,ch=mode==='challenge',id=HAND.id;
   var title=r.made?contractText()+' made'+(r.diff?' +'+r.diff:''):contractText()+' down '+(-r.diff);
@@ -1713,8 +1739,9 @@ function showResult(){
       '<div class="kv"><div>Time<b>'+fmtSec(r.secs)+'</b></div><div>Attempt<b>'+r.att+' of '+MAX_ATT+'</b></div></div>';
     if(r.made&&r.diff>0){ var bn=Math.min(r.diff,OVER_CAP)*OVER_BONUS; left+='<p>Includes '+bn+' bonus point'+(bn===1?'':'s')+' for '+r.diff+' overtrick'+(r.diff===1?'':'s')+'.</p>'; }
     if(r.done) left+='<p>Hand complete. Your score for this hand is <b>'+b.p+' points</b> in '+fmtSec(b.t)+'.</p>';
-    else left+='<p>You have '+remain+' attempt'+(remain===1?'':'s')+' left. Making it next time scores '+(r.att+1===2?6:3)+' points, plus a bonus for any overtricks.</p>';
+    else left+='<p>You have '+remain+' attempt'+(remain===1?'':'s')+' left. Making it next time scores '+(r.att+1===2?6:3)+' points, plus a bonus for any overtricks.</p>'+coachCard(HAND,false);
     var label=!r.done?'Try again':(setPending(setStart(id))?'See your challenge score':'Next hand');
+    if(r.done&&!r.made&&HAND.sol) left+='<p><b>Don\'t leave it there:</b> watch how it is made, then practise it. That is how the idea sticks for next time.</p>';
     right+='<div class="acts"><button class="btn primary" id="againBtn">'+label+'</button>'+(r.done?'<button class="btn" id="practiceBtn">Practise this hand</button>':'')+((r.done&&HAND.sol)?'<button class="btn" id="solBtn">Show me how it is done</button>':'')+((r.done&&HAND.pbp)?'<button class="btn" id="whyBtn">Read the explanation</button>':'')+'</div>';
   } else if(inLesson()){
     left+=r.made?'<p>Well done: that is '+esc((LESSON.title||'the technique').toLowerCase())+'.</p>':'<p>Not this time. Read the explanation or watch how it is done, then try again.</p>';
@@ -1727,9 +1754,10 @@ function showResult(){
     left+='<p class="muted">Practice is not scored.</p>';
     right+='<div class="acts"><button class="btn primary" id="againBtn">Back to the challenge</button><button class="btn" id="practiceBtn">Practise again</button>'+((isDone(id)&&HAND.sol)?'<button class="btn" id="solBtn">Show me how it is done</button>':'')+((isDone(id)&&HAND.pbp)?'<button class="btn" id="whyBtn">Read the explanation</button>':'')+'</div>';
   }
-  if(supportDue(inLesson()&&r.made)) left+=supportCard();
+  if(r.made&&supportDue(inLesson())) left+=supportCard();
   $('resultPanel').innerHTML='<div class="res"><div>'+left+'</div><div>'+right+'</div></div>';
   $('ovResult').classList.add('show');
+  wireCoach(HAND);
   if($('againBtn')) $('againBtn').onclick=afterHand;
   if($('practiceBtn')) $('practiceBtn').onclick=function(){start('practice');};
   if($('solBtn')) $('solBtn').onclick=function(){ startDemo(id); };
